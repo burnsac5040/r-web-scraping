@@ -28,23 +28,29 @@ library(tidyverse)
 # library(sjmisc)
 
 library(dict)
-# https://www.rdocumentation.org/packages/Dict/versions/0.10.0
-# devtools::install_github('mkuhn/dict')
-
+library(GetoptLong)
 # to_list(for(i in 1:10) if(i %% 2==0) i*i)
 # to_list(for(i in 1:length(test)) if(i %% 5==0) test[i])
 # test[seq(1, length(test), 5)]
 # test[c(rep(FALSE, 5), TRUE)]
 
-d <- dict()
-d[['hours']] <- 1
-d[['hour']] <- 1
-d[['days']]  <- 24
-d[['day']] <- 24
-daysago[1]
-
 daysago <- to_vec(for(i in tda) if(grepl('ago', i, fixed=TRUE)) i) %>%
 				gsub("\\sago", "", .)
+
+
+l <- list('hour'=1, 'day'=24)
+hrs <- list()
+
+for (v in names(l)){
+	for (d in daysago){
+		if (grepl(v, d, fixed=TRUE)){
+			n <- as.numeric(gsub("([0-9]+).*$", "\\1", d))
+			d <- as.numeric(gsub(d, l[[v]], d))
+			hrs <- append(hrs, (d*n))
+		}
+	}
+}
+
 
 pcomments <- to_vec(for(i in tda) if(grepl("\\d+\\scomments", i))  i)  %>%
 				gsub("\\scomments", "", .) %>%
@@ -52,6 +58,6 @@ pcomments <- to_vec(for(i in tda) if(grepl("\\d+\\scomments", i))  i)  %>%
 
 df <- data.frame(post_title=c(ptitle), score=c(score), 
 				 site=c(sitestr), user=c(user), 
-				 days_ago=c(daysago), num_comments=c(pcomments))
+				 hours_ago=c(hrs), num_comments=c(pcomments))
 
 write.csv(df, file='df.csv')
