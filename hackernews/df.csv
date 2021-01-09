@@ -1,31 +1,31 @@
 "","post_title","score","site","user","hours_ago","num_comments"
-"1","WhatsApp gives users an ultimatum: Share data with Facebook or stop using app",2193,"arstechnica.com","erwinmatijsen",21,1113
-"2","No meetings, no deadlines, no full-time employees",1247,"sahillavingia.com","sahillavingia",21,463
-"3","Facebook Indefinitely Suspends Trump",932,"facebook.com","jaredwiener",23,1243
-"4","Poll: Switching from WhatsApp",969,"rosenzweig.io","ColinWright",23,922
-"5","Dissecting the Apple M1 GPU, part I",531,"twitter.com","caution",23,129
-"6","The account of realDonaldTrump will be locked for 12 hours",673,"oregonlive.com","edward",21,1122
-"7","Simple Bank Is Closing",484,"bbc.com","roberto8647",19,566
-"8","Nuclear lighthouses built by the Soviets in the Arctic [video]",445,"cnbc.com","etimberg",23,235
-"9","DOJ fines Boeing over $2.5B, charges it with fraud conspiracy",300,"twitter.com","Lapz",24,113
-"10","A physical breach is a nightmare scenario for Capitol IT",310,"phoronix.com","rmason",24,150
-"11","A Look at the CPU Security Mitigation Costs Three Years After Spectre/Meltdown",280,"traffic-simulation.de","zdw",24,119
-"12","Traffic Simulator",505,"epicgames.com","eecc",24,132
-"13","Epic acquires RAD Game Tools",257,"N/A","jsheard",24,178
-"14","Thonny: A hassle-free Python micro-IDE",295,"thonny.org","nine_k",24,101
-"15","Infosec implications of the US Capitol physical breach",375,"twitter.com","ytpete",24,501
-"16","CVE-2021-3011: Key recovery on Google Titan Key",230,"ninjalab.io","hexa-",24,76
-"17","Donate to Signal",443,"signal.org","nanna",24,134
-"18","Boeing charged with 737 Max fraud conspiracy and agrees to pay over $2.5B",393,"justice.gov","edward",24,241
-"19","Who Wants to Be a Thousandaire? (2011)",182,"damninteresting.com","vinnyglennon",24,109
+"1","WhatsApp gives users an ultimatum: Share data with Facebook or stop using app",2201,"arstechnica.com","erwinmatijsen",23,1117
+"2","No meetings, no deadlines, no full-time employees",1259,"sahillavingia.com","sahillavingia",48,469
+"3","Facebook Indefinitely Suspends Trump",932,"facebook.com","jaredwiener",24,1261
+"4","Poll: Switching from WhatsApp",971,"rosenzweig.io","ColinWright",24,927
+"5","Dissecting the Apple M1 GPU, part I",532,"twitter.com","caution",24,132
+"6","The account of realDonaldTrump will be locked for 12 hours",675,"oregonlive.com","edward",24,1130
+"7","Simple Bank Is Closing",486,"bbc.com","roberto8647",24,576
+"8","Nuclear lighthouses built by the Soviets in the Arctic [video]",453,"cnbc.com","etimberg",24,239
+"9","DOJ fines Boeing over $2.5B, charges it with fraud conspiracy",301,"twitter.com","Lapz",24,115
+"10","A physical breach is a nightmare scenario for Capitol IT",310,"traffic-simulation.de","rmason",24,160
+"11","Traffic Simulator",511,"phoronix.com","eecc",24,136
+"12","A Look at the CPU Security Mitigation Costs Three Years After Spectre/Meltdown",281,"epicgames.com","zdw",24,120
+"13","Epic acquires RAD Game Tools",258,"N/A","jsheard",24,181
+"14","Thonny: A hassle-free Python micro-IDE",297,"thonny.org","nine_k",24,101
+"15","Infosec implications of the US Capitol physical breach",375,"twitter.com","ytpete",24,502
+"16","CVE-2021-3011: Key recovery on Google Titan Key",232,"ninjalab.io","hexa-",24,76
+"17","Donate to Signal",443,"signal.org","nanna",24,136
+"18","Boeing charged with 737 Max fraud conspiracy and agrees to pay over $2.5B",394,"justice.gov","edward",24,242
+"19","Who Wants to Be a Thousandaire? (2011)",182,"damninteresting.com","vinnyglennon",24,110
 "20","Show HN: v8-riscv — Port of JavaScript V8 engine to RISC-V",118,"github.com","partingshots",24,51
-"21","Shooting photos with an IMAX projector lens",168,"theslantedlens.com","dmitrygr",24,63
-"22","Show HN: I built an intercom for my 6 yo to keep us connected during quarantine",173,"chordata.cc","daylankifky",24,119
-"23","M1 Macs cannot support dual Extended displays through their Thunderbolt 3 ports",215,"caldigit.com","juliangamble",24,249
-"24","OpenBoard – FOSS Keyboard for Android which respects your privacy",190,"github.com","mikepechadotcom",24,146
-"25","Groundhog: Addressing the Threat That R Poses to Reproducible Research",161,"datacolada.org","snakeboy",24,120
-"26","Show HN: Leet Resumes – a free technical resume-writing service",136,"leetresumes.com","mcenedella",24,106
-"27","I Replaced Baremetrics and ChartMogul with Rake",98,"keygen.sh","ezekg",72,38
-"28","New hard disk write head analytical technology can increase hard disk capacities",89,"tohoku.ac.jp","XzetaU8",48,47
-"29","Decoding the Peloton",156,"ihaque.org","_ihaque",24,113
-"30","Encrypted Client Hello: The Future of ESNI in Firefox",147,"blog.mozilla.org","todsacerdoti",48,81
+"21","Shooting photos with an IMAX projector lens",168,"theslantedlens.com","dmitrygr",48,63
+"22","Show HN: I built an intercom for my 6 yo to keep us connected during quarantine",175,"chordata.cc","daylankifky",24,121
+"23","M1 Macs cannot support dual Extended displays through their Thunderbolt 3 ports",215,"caldigit.com","juliangamble",24,250
+"24","OpenBoard – FOSS Keyboard for Android which respects your privacy",190,"github.com","mikepechadotcom",24,147
+"25","Show HN: Leet Resumes – a free technical resume-writing service",140,"leetresumes.com","mcenedella",24,107
+"26","Groundhog: Addressing the Threat That R Poses to Reproducible Research",161,"datacolada.org","snakeboy",72,120
+"27","New hard disk write head analytical technology can increase hard disk capacities",91,"tohoku.ac.jp","XzetaU8",24,49
+"28","I Replaced Baremetrics and ChartMogul with Rake",98,"keygen.sh","ezekg",48,38
+"29","Decoding the Peloton",156,"ihaque.org","_ihaque",48,114
+"30","Encrypted Client Hello: The Future of ESNI in Firefox",148,"blog.mozilla.org","todsacerdoti",24,81
