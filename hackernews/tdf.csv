@@ -1,31 +1,31 @@
-"post_title","score","site","user","hours","n_comm"
-"Permanent suspension of @realDonaldTrump",1901,"blog.twitter.com","minimaxir",24,1881
-"Signal WhatsApp Chats Import",784,"github.com","janisz",24,266
-"Apple's privacy labels show WhatsApp and Facebook Messenger hunger for user data",485,"techradar.com","ColinWright",24,239
-"Sci-Hub Founder Criticizes Sudden Twitter Ban over “Counterfeit” Content",605,"torrentfreak.com","prvc",24,265
-"Laptop stolen from Pelosi's office during storming of U.S. Capitol, says aide",554,"reuters.com","spzb",24,688
-"Victory at the High Court against the government’s use of 'general warrants’",294,"privacyinternational.org","mpweiher",24,99
-"Sealed U.S. Court Records Exposed in SolarWinds Breach",384,"krebsonsecurity.com","parsecs",48,150
-"Archaeologists in Turkey unearth 2,500-year-old temple of Aphrodite",240,"smithsonianmag.com","gmays",24,48
-"WhatsApp whitepaper removed sentence about never having access to private keys",479,"twitter.com","Aissen",24,101
-"Show HN: I built a 4kb alternative to React, Vue, etc for building web UIs.",334,"synergyjs.org","defx",48,155
-"How Boston Dynamics Taught Its Robots to Dance",363,"ieee.org","samizdis",48,196
-"Peter Norvig's “pytudes” for Advent of Code 2020",306,"github.com","ff7f00",72,89
-"College campuses are designed at human-scale – cities can be too",273,"strongtowns.org","jseliger",24,144
-"Car manufacturing hit by global semiconductor shortage",161,"ft.com","kjhughes",24,112
-"Texas Instruments sent a DMCA takedown to a site archiving data sheets",351,"twitter.com","DyslexicAtheist",24,120
-"Scipy Lecture Notes",310,"scipy-lectures.org","vyuh",24,45
-"WhatsApp Beaten by Apple’s New iMessage Privacy Update",347,"forbes.com","Tomte",24,184
-"Apple has threatened to ban Parler from the App Store",472,"buzzfeednews.com","coloneltcb",24,1063
-"How Tail Call Optimization Works",216,"eklitzke.org","g42gregory",24,197
-"CO2 already emitted will warm Earth beyond climate targets, study finds",336,"cbc.ca","colinprince",24,247
-"Laptop stolen from Pelosi's office during storming of U.S. Capitol, says aide",360,"reuters.com","thefounder",24,8
-"2020 Mathematical Art Exhibition",150,"ams.org","bryanrasmussen",24,31
-"Smooth Voxel Terrain, Part 2 (2012)",141,"0fps.net","fanf2",24,19
-"Show HN: Ecco – See what your NLP language model is “thinking”",182,"eccox.io","jalammar",24,32
-"Reddit bans subreddit group “r/DonaldTrump”",358,"axios.com","threatofrain",24,1031
-"USV Climate Fund",127,"usv.com","tosh",24,37
-"Session Protocol: Technical implementation details",72,"getsession.org","johnchristopher",24,24
-"Signal AMA on Reddit",244,"reddit.com","giuliomagnifico",24,73
-"Avoiding instruction cache misses (2019)",68,"paweldziepak.dev","nkurz",24,18
-"Love’s contradictions: Catullus on the agony of infatuation",91,"psyche.co","diodorus",48,18
+"title","rank","site","score","user","hours","n_comm"
+"GNOME has no thumbnails in the file picker and my toilets are blocked",1,"jayfax.neocities.org",1371,"jfax",19,664
+"Amazon, Apple and Google Cut Off Parler",2,"nytimes.com",1022,"jimmy",23,3563
+"Wikipedia is 20",3,"economist.com",701,"kylebarron",20,363
+"PeerTube v3",4,"framablog.org",656,"spzx",18,226
+"Algorithms for Decision Making",5,"algorithmsbook.com",643,"Dowwie",22,82
+"Facebook buying ads for Messenger to be top result when you search for 'Signal'",6,"twitter.com",613,"ffpip",23,193
+"Cabal: A peer-to-peer, off-grid, community-first, hackable chat platform",7,"cabal.chat",367,"yosoyubik",19,288
+"Chemistry of Cast-Iron Seasoning",8,"sherylcanter.com",337,"Tomte",21,267
+"FPGA dev board that's cheap, simple and supported by OSS toolchain",9,"github.com",253,"funkaster",24,71
+"An Invisible Tax on the Web: Video Codecs",10,"blog.mozilla.org",308,"doener",24,155
+"GCC Rust: GCC Front-End for Rust",11,"github.com",302,"varbhat",24,153
+"Ecosia – A search engine that plants trees",12,"ecosia.org",293,"fossislife",24,143
+"Scuttlebutt – A decentralized secure gossip platform",13,"scuttlebutt.nz",331,"dgellow",24,157
+"St. Benedict’s Rule for Monasteries",14,"gutenberg.org",238,"simonebrunozzi",24,128
+"Skynet – Build a Free Internet",15,"siasky.net",251,"thesausageking",24,129
+"The many lies about reducing complexity part 2: Cloud",16,"rna.nl",218,"rapnie",24,121
+"Build Your Own Text Editor",17,"viewsourcecode.org",303,"Tomte",24,34
+"Will the US experience a violent upheaval in 2020?",18,"livescience.com",207,"monort",24,210
+"Foundations of Embedded Systems",19,"f-of-e.org",159,"blindm",24,17
+"The Platform Is the Enemy",20,"danielbmarkham.com",200,"nomdep",24,77
+"The Future of Libjpeg-Turbo",21,"groups.google.com",154,"tehnicaorg",24,27
+"[dupe] Amazon Is Booting Parler Off AWS",22,"buzzfeednews.com",484,"muglug",24,10
+"The Weirdness of Kentucky Route Zero",23,"joshhaas.com",121,"olvy",24,30
+"Quick Overview of Julia language [pdf]",24,"algorithmsbook.com",143,"gurjeet",24,54
+"Element – All-in-one secure chat app for teams, friends and organisations",25,"element.io",279,"dunefox",24,114
+"Startpage.com: Privacy-oriented search engine",26,"startpage.com",133,"activatedgeek",24,79
+"NixOS Linux",27,"nixos.org",224,"lemonspat",24,73
+"Games on GitHub – A list of popular/awesome video games hosted on GitHub",28,"github.com",165,"wcerfgba",24,9
+"Common pronunciations of Linux directories, commands, etc.",29,"linux.org",141,"cardamomo",24,251
+"What is happening to Lazada is happening to all companies acquired by Alibaba",30,"momentum.asia",96,"",24,34

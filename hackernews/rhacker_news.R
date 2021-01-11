@@ -114,23 +114,6 @@ get_pcomments <- function(tda){
 
 ncomments <- get_pcomments(tda)
 
-# ---------
-# dataframe
-# ---------
-# df <- data.frame(post_title=c(ptitle), score=c(score),
-# 				 site=c(sitestr), user=c(user),
-# 				 hours_ago=hrs, num_comments=c(ncomments))
-
-# write.csv(df, file='df.csv', row.names=FALSE)
-
-# # Working with tibble
-# tdf <- tibble(post_title=ptitle, score=score, site=sitestr,
-# 			user=user, hours=hrs, n_comm=ncomments)
-
-
-# write.csv(tdf, file='tdf.csv', row.names=FALSE)
-# write.table(tdf, file='tdf.tsv', sep="\t", row.names=FALSE,
-# 			col.names=FALSE, quote=FALSE)
 
 # ===========
 ### All Pages
@@ -149,6 +132,7 @@ href <- morelink(page)
 
 library(glue)
 
+# Generate list of URLs to use
 urls <- list()
 for (i in 1:9){
 	for (j in 1:4){
@@ -160,19 +144,20 @@ for (i in 1:9){
 # testing to make sure they work
 thours <- get_hours(get_tda(read_html(urls[[1]])))
 
-# ----------------
-# Post title block (zipping with rank to be able to fill na)
-# Implements a much better way of scraping data than above
-# ----------------
+# ------------------
+# Post Title Block #
+# A way to track NA
+# ------------------
 
 library(zeallot) # uses %<-% to return multiple values
 
-"Returns post title, external link, and post rank"
 get_ptitleblk <- function(page){
+"Returns post title, external link, and post rank"
 	ptitleblk <- html_nodes(page, '.title') %>%
 		html_text() %>%
 		grep('more', ., ignore.case=TRUE, invert=TRUE, value=TRUE)
 
+	# Rank
 	prank <- ptitleblk[c(TRUE, FALSE)] %>%
 		gsub("\\.", "", .) %>%
 		as.numeric()
@@ -180,31 +165,87 @@ get_ptitleblk <- function(page){
 	titnsite <- ptitleblk[c(FALSE, TRUE)] %>%
 		str_split('\\(', simplify=FALSE)
 
+	# Title
 	ptitle <- lapply(titnsite, "[", 1) %>%
 		trimws()
 
-	psite <- lapply(titnsite, "[", 2) %>%
-		gsub("/.*|\\)", "", .) %>%
-		trimws()
-
+	# External Site
+	psite <- c()
+	for (i in t){
+		s <- rev(i)[1] %>% gsub("/.*|\\)", "", .)
+		psite <- append(psite, s)
+}
 	return(list(prank, ptitle, psite))
 }
 
 c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
 
-# df <- data.frame(rank=prank, post_title=ptitle), score=c(score),
-# 				 site=c(sitestr), user=c(user),
-# 				 hours_ago=hrs, num_comments=c(ncomments))
+# --------------
+# Post Subtext #
+# --------------
 
-# Working with tibble
-tdf <- tibble(rank=prank, post_title=ptitle, score=score, site=psite,
-			user=user, hours=hrs, n_comm=ncomments)
+get_subtext <- function(page){
+"Returns post score, user, time, and number of comments"
+	psubtext <- html_nodes(page, '.subtext') %>%
+		html_text() %>%
+		gsub("\\n", "", .) %>%
+		trimws()
 
-tdf
+	# Score
+	pscore <- gsub('points.*', "\\1", t) %>%
+		trimws() %>%
+		as.numeric()
+
+	# User
+	puser <- gsub('.*by', '', t) %>%
+		gsub('\\d.*', '', .) %>%
+		trimws()
+
+	# Hours ago
+	phours <- gsub('ago.*', '', t) %>%
+		str_split(" ") %>%
+		lapply('[', 5:6)
+	phours <- paste(lapply(h, '[', 1), lapply(h, '[', 2))
+	conv <- list('hour'=1, 'day'=24)
+	hrs <- c()
+
+	for (v in names(conv)){
+		for (d in phours){
+			if (grepl(v, d, fixed=TRUE)){
+				n <- as.numeric(gsub("([0-9]+).*$", "\\1", d))
+				d <- as.numeric(gsub(d, conv[[v]], d))
+				hrs <- append(hrs, (d*n))
+			}
+		}
+	}
+
+	# Comments
+	pcomments <- gsub('.*\\shide\\s\\|', '', t) %>%
+		gsub('comment(s)?', '', .) %>%
+		trimws() %>%
+		as.numeric()
+
+	return(list(pscore, puser, hrs, pcomments))
+}
+
+
+c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
+
+
+# -----------
+# Dataframe #
+# -----------
+
+tdf <- tibble(title=ptitle, rank=prank, site=psite,
+		score=pscore, user=puser, hours=hrs, n_comm=pcomments)
+
 write.csv(tdf, file='tdf.csv', row.names=FALSE)
 write.table(tdf, file='tdf.tsv', sep="\t", row.names=FALSE,
 			col.names=FALSE, quote=FALSE)
 
 
-library(xts)
-library(infer)
+# ----------------------------
+# Scraping data on all pages #
+# ----------------------------
+
+
