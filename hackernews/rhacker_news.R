@@ -16,8 +16,8 @@ library(rebus)
 ### One Page
 # ==========
 
-url <- "https://news.ycombinator.com/front"
-page <- read_html(url)
+base_url<- "https://news.ycombinator.com/front"
+page <- read_html(base_url)
 
 # ----------
 # Post title
@@ -133,13 +133,15 @@ href <- morelink(page)
 library(glue)
 
 # Generate list of URLs to use
-urls <- list()
-for (i in 1:9){
+urls <- c()
+for (i in 1:12){
 	for (j in 1:4){
-		turl <- glue(url, "?day=2021-01-0{i}&p={j}")
+		turl <- glue(base_url, "?day=2021-01-0{i}&p={j}")
 		urls <- append(urls, turl)
 	}
 }
+
+urls
 
 # testing to make sure they work
 thours <- get_hours(get_tda(read_html(urls[[1]])))
@@ -171,14 +173,15 @@ get_ptitleblk <- function(page){
 
 	# External Site
 	psite <- c()
-	for (i in t){
-		s <- rev(i)[1] %>% gsub("/.*|\\)", "", .)
+	for (i in titnsite){
+		s <- rev(i)[1] %>% gsub("\\/.*|\\)", "", .)
 		psite <- append(psite, s)
 }
 	return(list(prank, ptitle, psite))
 }
 
 c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
+
 
 # --------------
 # Post Subtext #
@@ -192,20 +195,20 @@ get_subtext <- function(page){
 		trimws()
 
 	# Score
-	pscore <- gsub('points.*', "\\1", t) %>%
+	pscore <- gsub('points.*', "\\1", psubtext) %>%
 		trimws() %>%
 		as.numeric()
 
 	# User
-	puser <- gsub('.*by', '', t) %>%
+	puser <- gsub('.*by', '', psubtext) %>%
 		gsub('\\d.*', '', .) %>%
 		trimws()
 
 	# Hours ago
-	phours <- gsub('ago.*', '', t) %>%
+	phours <- gsub('ago.*', '', psubtext) %>%
 		str_split(" ") %>%
 		lapply('[', 5:6)
-	phours <- paste(lapply(h, '[', 1), lapply(h, '[', 2))
+	phours <- paste(lapply(phours, '[', 1), lapply(phours, '[', 2))
 	conv <- list('hour'=1, 'day'=24)
 	hrs <- c()
 
@@ -220,7 +223,7 @@ get_subtext <- function(page){
 	}
 
 	# Comments
-	pcomments <- gsub('.*\\shide\\s\\|', '', t) %>%
+	pcomments <- gsub('.*\\shide\\s\\|', '', psubtext) %>%
 		gsub('comment(s)?', '', .) %>%
 		trimws() %>%
 		as.numeric()
@@ -231,13 +234,13 @@ get_subtext <- function(page){
 
 c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
 
-
 # -----------
 # Dataframe #
 # -----------
 
 tdf <- tibble(title=ptitle, rank=prank, site=psite,
-		score=pscore, user=puser, hours=hrs, n_comm=pcomments)
+		score=pscore, user=puser, hours=phours, n_comm=pcomments)
+
 
 write.csv(tdf, file='tdf.csv', row.names=FALSE)
 write.table(tdf, file='tdf.tsv', sep="\t", row.names=FALSE,
@@ -248,4 +251,46 @@ write.table(tdf, file='tdf.tsv', sep="\t", row.names=FALSE,
 # Scraping data on all pages #
 # ----------------------------
 
+# Testing to make sure the loop works
+y <- urls[1:2]
 
+tt <- tibble(title=NA, rank=NA, site=NA, score=NA, user=NA, hours=NA, n_comm=NA)
+for (i in y){
+	page <- read_html(i)
+	c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
+	c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
+
+	tdf <- tibble(title=ptitle, rank=prank, site=psite,
+		score=pscore, user=puser, hours=phours, n_comm=pcomments)
+
+	tt <- bind_rows(tt, tdf)
+}
+
+tt[-c(1),]
+
+
+# Performing the loop
+tt <- tibble(title=NA, rank=NA, site=NA, score=NA, user=NA, hours=NA, n_comm=NA)
+dfs <- list()
+
+for (url in urls){
+	page <- read_html(url)
+	c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
+	c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
+
+	tdf <- data.frame(title=ptitle, rank=prank, site=psite,
+		score=pscore, user=puser, hours=phours, n_comm=pcomments)
+
+	dfs <- append(dfs, tdf)
+}
+
+library(data.table)
+library(plyr)
+# ldply(dfs, data.frame)
+# bind_rows(dfs, .id="column_label")
+# do.call("rbind", dfs)
+
+
+# rbindlist(dfs)
+
+# matrix(c(ptitle, puser), byrow=FALSE)
