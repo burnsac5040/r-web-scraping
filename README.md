@@ -9,4 +9,4 @@ Scraping the title of the post, external website, user, points/upvotes, time it 
 -----------
 [Investor Hub](investorhub) [WIP]
 
-I wanted to test my knowledge of R as well as learn more by scraping stock data again.  Originally I scraped from [tiingo.com](tiingo.com) using Python, but this time I scraped from [investorshub.com](investorshub.advfn.com).  The headlines on this website could be used more so for a script to help one invest.  I decided to upload this anyway.
+I wanted to test my knowledge of R as well as learn more by scraping stock data again.  Originally I scraped from [tiingo.com](https://tiingo.com) using Python, but this time I scraped from [investorshub.com](https://investorshub.advfn.com).  The headlines on this website could be used more so for a script to help one invest.  I decided to upload this anyway.
