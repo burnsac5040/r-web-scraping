@@ -48,6 +48,7 @@ while (i < 30){
   Sys.sleep(3)
 }
 
+# NOTE: Remove N/A's
 hub_df <- hub_df[complete.cases(hub_df), ] # removing NA's
 colSums(is.na(hub_df)) # check to make sure there are no NA's
 

@@ -23,9 +23,9 @@ page <- read_html(base_url)
 # Post title
 # ----------
 get_ptitle <- function(page){
-	ptitle <- html_nodes(page, '.storylink') %>%
-		html_text() %>%
-		trimws()
+    ptitle <- html_nodes(page, '.storylink') %>%
+        html_text() %>%
+        trimws()
 }
 
 ptitle <- get_ptitle(page)
@@ -34,10 +34,10 @@ ptitle <- get_ptitle(page)
 # Upvotes
 # -------
 get_score <- function(page){
-	score <- html_nodes(page, '.score') %>%
-		html_text() %>%
-		gsub(" points", "", .) %>%
-		as.numeric()
+    score <- html_nodes(page, '.score') %>%
+        html_text() %>%
+        gsub(" points", "", .) %>%
+        as.numeric()
 }
 
 score <- get_score(page)
@@ -47,10 +47,10 @@ score <- get_score(page)
 #### MISSING VALUES, CHANGE FIGURE OUT ZIPPING TOGETHER ####
 # -------------------------
 get_site <- function(page){
-	sitestr <- html_nodes(page, '.sitestr') %>%
-		html_text() %>%
-		gsub("/.*", "", .) %>% # get base url
-		trimws()
+    sitestr <- html_nodes(page, '.sitestr') %>%
+        html_text() %>%
+        gsub("/.*", "", .) %>% # get base url
+        trimws()
 }
 
 sitestr <- get_site(page)
@@ -61,9 +61,9 @@ sitestr <- get_site(page)
 # Username
 # --------
 get_user <- function(page){
-	user <- html_nodes(page, '.hnuser') %>%
-		html_text() %>%
-		trimws()
+    user <- html_nodes(page, '.hnuser') %>%
+        html_text() %>%
+        trimws()
 }
 
 user <- get_user(page)
@@ -72,9 +72,9 @@ user <- get_user(page)
 # Table Data to Parse
 # ------------------
 get_tda <- function(page){
-	tda <- html_nodes(page, 'td a') %>%
-		html_text() %>%
-		trimws()
+    tda <- html_nodes(page, 'td a') %>%
+        html_text() %>%
+        trimws()
 }
 
 tda <- get_tda(page)
@@ -83,22 +83,22 @@ tda <- get_tda(page)
 # Time (ago) the post was made
 # ---------------------------
 get_hours <- function(tda){
-	daysago <- to_vec(for(i in tda) if(grepl('ago', i, fixed=TRUE)) i) %>%
-				gsub("\\sago", "", .)
+    daysago <- to_vec(for(i in tda) if(grepl('ago', i, fixed=TRUE)) i) %>%
+                gsub("\\sago", "", .)
 
-	conv <- list('hour'=1, 'day'=24)
-	hrs <- list()
+    conv <- list('hour'=1, 'day'=24)
+    hrs <- list()
 
-	for (v in names(conv)){
-		for (d in daysago){
-			if (grepl(v, d, fixed=TRUE)){
-				n <- as.numeric(gsub("([0-9]+).*$", "\\1", d))
-				d <- as.numeric(gsub(d, conv[[v]], d))
-				hrs <- append(hrs, (d*n))
-			}
-		}
-	}
-	return(unlist(hrs))
+    for (v in names(conv)){
+        for (d in daysago){
+            if (grepl(v, d, fixed=TRUE)){
+                n <- as.numeric(gsub("([0-9]+).*$", "\\1", d))
+                d <- as.numeric(gsub(d, conv[[v]], d))
+                hrs <- append(hrs, (d*n))
+            }
+        }
+    }
+    return(unlist(hrs))
 }
 
 hrs <- get_hours(tda)
@@ -107,9 +107,9 @@ hrs <- get_hours(tda)
 # Post Comments
 # ------------
 get_pcomments <- function(tda){
-	ncomments <- to_vec(for(i in tda) if(grepl("\\d+\\scomments", i))  i)  %>%
-				gsub("\\scomments", "", .) %>%
-				as.numeric()
+    ncomments <- to_vec(for(i in tda) if(grepl("\\d+\\scomments", i))  i)  %>%
+                gsub("\\scomments", "", .) %>%
+                as.numeric()
 }
 
 ncomments <- get_pcomments(tda)
@@ -123,8 +123,8 @@ ncomments <- get_pcomments(tda)
 # List of URLs
 # ------------
 morelink <- function(page){
-	html_nodes(page, '.morelink') %>%
-		html_attr('href')
+    html_nodes(page, '.morelink') %>%
+        html_attr('href')
 
 }
 
@@ -135,10 +135,10 @@ library(glue)
 # Generate list of URLs to use
 urls <- c()
 for (i in 1:12){
-	for (j in 1:4){
-		turl <- glue(base_url, "?day=2021-01-0{i}&p={j}")
-		urls <- append(urls, turl)
-	}
+    for (j in 1:4){
+        turl <- glue(base_url, "?day=2021-01-0{i}&p={j}")
+        urls <- append(urls, turl)
+    }
 }
 
 urls
@@ -155,29 +155,29 @@ library(zeallot) # uses %<-% to return multiple values
 
 get_ptitleblk <- function(page){
 "Returns post title, external link, and post rank"
-	ptitleblk <- html_nodes(page, '.title') %>%
-		html_text() %>%
-		grep('more', ., ignore.case=TRUE, invert=TRUE, value=TRUE)
+    ptitleblk <- html_nodes(page, '.title') %>%
+        html_text() %>%
+        grep('more', ., ignore.case=TRUE, invert=TRUE, value=TRUE)
 
-	# Rank
-	prank <- ptitleblk[c(TRUE, FALSE)] %>%
-		gsub("\\.", "", .) %>%
-		as.numeric()
+    # Rank
+    prank <- ptitleblk[c(TRUE, FALSE)] %>%
+        gsub("\\.", "", .) %>%
+        as.numeric()
 
-	titnsite <- ptitleblk[c(FALSE, TRUE)] %>%
-		str_split('\\(', simplify=FALSE)
+    titnsite <- ptitleblk[c(FALSE, TRUE)] %>%
+        str_split('\\(', simplify=FALSE)
 
-	# Title
-	ptitle <- lapply(titnsite, "[", 1) %>%
-		trimws()
+    # Title
+    ptitle <- lapply(titnsite, "[", 1) %>%
+        trimws()
 
-	# External Site
-	psite <- c()
-	for (i in titnsite){
-		s <- rev(i)[1] %>% gsub("\\/.*|\\)", "", .)
-		psite <- append(psite, s)
+    # External Site
+    psite <- c()
+    for (i in titnsite){
+        s <- rev(i)[1] %>% gsub("\\/.*|\\)", "", .)
+        psite <- append(psite, s)
 }
-	return(list(prank, ptitle, psite))
+    return(list(prank, ptitle, psite))
 }
 
 c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
@@ -189,46 +189,46 @@ c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
 
 get_subtext <- function(page){
 "Returns post score, user, time, and number of comments"
-	psubtext <- html_nodes(page, '.subtext') %>%
-		html_text() %>%
-		gsub("\\n", "", .) %>%
-		trimws()
+    psubtext <- html_nodes(page, '.subtext') %>%
+        html_text() %>%
+        gsub("\\n", "", .) %>%
+        trimws()
 
-	# Score
-	pscore <- gsub('points.*', "\\1", psubtext) %>%
-		trimws() %>%
-		as.numeric()
+    # Score
+    pscore <- gsub('points.*', "\\1", psubtext) %>%
+        trimws() %>%
+        as.numeric()
 
-	# User
-	puser <- gsub('.*by', '', psubtext) %>%
-		gsub('\\d.*', '', .) %>%
-		trimws()
+    # User
+    puser <- gsub('.*by', '', psubtext) %>%
+        gsub('\\d.*', '', .) %>%
+        trimws()
 
-	# Hours ago
-	phours <- gsub('ago.*', '', psubtext) %>%
-		str_split(" ") %>%
-		lapply('[', 5:6)
-	phours <- paste(lapply(phours, '[', 1), lapply(phours, '[', 2))
-	conv <- list('hour'=1, 'day'=24)
-	hrs <- c()
+    # Hours ago
+    phours <- gsub('ago.*', '', psubtext) %>%
+        str_split(" ") %>%
+        lapply('[', 5:6)
+    phours <- paste(lapply(phours, '[', 1), lapply(phours, '[', 2))
+    conv <- list('hour'=1, 'day'=24)
+    hrs <- c()
 
-	for (v in names(conv)){
-		for (d in phours){
-			if (grepl(v, d, fixed=TRUE)){
-				n <- as.numeric(gsub("([0-9]+).*$", "\\1", d))
-				d <- as.numeric(gsub(d, conv[[v]], d))
-				hrs <- append(hrs, (d*n))
-			}
-		}
-	}
+    for (v in names(conv)){
+        for (d in phours){
+            if (grepl(v, d, fixed=TRUE)){
+                n <- as.numeric(gsub("([0-9]+).*$", "\\1", d))
+                d <- as.numeric(gsub(d, conv[[v]], d))
+                hrs <- append(hrs, (d*n))
+            }
+        }
+    }
 
-	# Comments
-	pcomments <- gsub('.*\\shide\\s\\|', '', psubtext) %>%
-		gsub('comment(s)?', '', .) %>%
-		trimws() %>%
-		as.numeric()
+    # Comments
+    pcomments <- gsub('.*\\shide\\s\\|', '', psubtext) %>%
+        gsub('comment(s)?', '', .) %>%
+        trimws() %>%
+        as.numeric()
 
-	return(list(pscore, puser, hrs, pcomments))
+    return(list(pscore, puser, hrs, pcomments))
 }
 
 
@@ -239,12 +239,12 @@ c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
 # -----------
 
 tdf <- tibble(title=ptitle, rank=prank, site=psite,
-		score=pscore, user=puser, hours=phours, n_comm=pcomments)
+        score=pscore, user=puser, hours=phours, n_comm=pcomments)
 
 
 write.csv(tdf, file='tdf.csv', row.names=FALSE)
 write.table(tdf, file='tdf.tsv', sep="\t", row.names=FALSE,
-			col.names=FALSE, quote=FALSE)
+            col.names=FALSE, quote=FALSE)
 
 
 # ----------------------------
@@ -256,14 +256,14 @@ y <- urls[1:2]
 
 tt <- tibble(title=NA, rank=NA, site=NA, score=NA, user=NA, hours=NA, n_comm=NA)
 for (i in y){
-	page <- read_html(i)
-	c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
-	c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
+    page <- read_html(i)
+    c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
+    c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
 
-	tdf <- tibble(title=ptitle, rank=prank, site=psite,
-		score=pscore, user=puser, hours=phours, n_comm=pcomments)
+    tdf <- tibble(title=ptitle, rank=prank, site=psite,
+        score=pscore, user=puser, hours=phours, n_comm=pcomments)
 
-	tt <- bind_rows(tt, tdf)
+    tt <- bind_rows(tt, tdf)
 }
 
 tt[-c(1),]
@@ -274,14 +274,14 @@ tt <- tibble(title=NA, rank=NA, site=NA, score=NA, user=NA, hours=NA, n_comm=NA)
 dfs <- list()
 
 for (url in urls){
-	page <- read_html(url)
-	c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
-	c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
+    page <- read_html(url)
+    c(prank, ptitle, psite) %<-%  get_ptitleblk(page)
+    c(pscore, puser, phours, pcomments) %<-% get_subtext(page)
 
-	tdf <- data.frame(title=ptitle, rank=prank, site=psite,
-		score=pscore, user=puser, hours=phours, n_comm=pcomments)
+    tdf <- data.frame(title=ptitle, rank=prank, site=psite,
+        score=pscore, user=puser, hours=phours, n_comm=pcomments)
 
-	dfs <- append(dfs, tdf)
+    dfs <- append(dfs, tdf)
 }
 
 library(data.table)
