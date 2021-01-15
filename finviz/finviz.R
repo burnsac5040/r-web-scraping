@@ -21,7 +21,6 @@ library(RCurl)
 base_url <- "https://finviz.com/quote.ashx?t="
 tickers <- c("HD")
 
-
 page <- htmlParse(GET(paste0(base_url, tickers[[1]])), encoding = "UTF-8")
 tables <- readHTMLTable(page)
 wtable <- tables[[8]]
@@ -102,37 +101,35 @@ parsed_df <- do.call(rbind, dfs)
 # Categories -- Some of these may not be split up exactly
 # ----------
 
-financial <- c("Paypal" = "PYPL", "Visa" = "V", "Mastercard" = "MA",
+financial <- list("Paypal" = "PYPL", "Visa" = "V", "Mastercard" = "MA",
                "Discover" = "DFS", "CitiGroup" = "C", "Square" = "SQ",
                "GoldmanSachs" = "GS", "AmerExp" = "AXP", "ProgLease" = "PRG")
 
-bigtech <- c("Google" = "GOOGL", "Facebook" = "FB", "Twitter", "TWTR",
+bigtech <- list("Google" = "GOOGL", "Facebook" = "FB", "Twitter" = "TWTR",
              "Snapchat" = "SNAP", "Apple" = "AAPL", "Microsoft" = "MSFT",
              "Netflix" = "NFLX", "Tesla" = "TSLA", "Nvidia" = "NVDA",
              "Intel" = "INTC")
 
-consumer <- c("Alibaba" = "BABA", "Amazon" = "AMZN", "Ebay" = "EBAY",
+consumer <- list("Alibaba" = "BABA", "Amazon" = "AMZN", "Ebay" = "EBAY",
               "WalMart" = "WMT", "Target" = "TGT", "Costco" = "COST",
               "DollarGen" = "DG", "HomeDepot" = "HD")
 
-industrial <- c("3M" = "MMM", "GenElect" = "GE", "KCSouth" = "KSU",
+industrial <- list("3M" = "MMM", "GenElect" = "GE", "KCSouth" = "KSU",
                 "LockHeed" = "LMT", "Ratheon" = "RTX", "Honeywell" = "HON",
                 "Boeing" = "BA", "Rockwell" = "ROK")
 
-fastfood <- c("McDonalds" = "MCD", "Wendys" = "WEN", "JackInBox" = "JACK",
+fastfood <- list("McDonalds" = "MCD", "Wendys" = "WEN", "JackInBox" = "JACK",
               "Dominos" = "DPZ", "Chipotle" = "CMG", "RestBrandInt" = "QSR")
 
-urls <- paste0(base_url, c(financial, bigtech, consumer, industrial, fastfood))
-
+# ----------------------
 # Getting all the tables
-# ---------------------
-get_table <- function(tickers) {
-    library(dplyr)
-    dfs <- list()
+# ----------------------
+
+get_specs <- function(tickers){
+    parsed_specs <- data.frame()
 
     for (ticker in tickers){
-        url <- paste0("https://finviz.com/quote.ashx?t=", ticker)
-        page <- htmlParse(GET(url), encoding = "UTF-8")
+        page <- htmlParse(GET(paste0(base_url, ticker[[1]]), encoding = "UTF-8"))
         tables <- readHTMLTable(page)
         wtable <- tables[[8]]
 
@@ -151,17 +148,25 @@ get_table <- function(tickers) {
         t12 <- setNames(rbind(names(t12), t12), c("Spec", "Value"))
 
         tot <- rbind(t2, t4, t6, t8, t10, t12)
-        tot <- distinct(tot, "Spec", .keep_all=TRUE)
-        rownames(tot) <- tot$Spec
-        tot <- as.data.frame(t(as.matrix(tot)))
-        rownames(tot) <- ticker
 
-        dfs <- append(dfs, tot)
+        tot <- distinct(tot, Spec, .keep_all = TRUE)
+        rownames(tot) <- tot$Spec
+        tot <- tot[, -c(1), drop=FALSE]
+        tot <- as.data.frame(t(as.matrix(tot)))
+        rownames(tot) <- ticker[[1]] # Not visible in visidata
+        tot <- cbind("ticker"=ticker, tot)
+
+        parsed_specs <- rbind(parsed_specs, tot)
     }
-    return(dfs)
+    return(parsed_specs)
 }
 
+# get_specs(unname(c(financial, bigtech, consumer, industrial, fastfood)))
 
-aa <- get_table(c("HD"))
-aa
+financial_df <- get_specs(unname(financial))
+bigtech_df <- get_specs(unname(bigtech))
+consumer_df <- get_specs(unname(consumer))
+industrial_df <- get_specs(unname(industrial))
+ff_df <- get_specs(unname(fastfood))
 
+tot_df <- rbind(financial_df, bigtech_df, consumer_df, industrial_df, ff_df)
