@@ -1,3 +1,9 @@
+# ------------
+# title: yahoo.R
+# author: Lucas Burns
+# description: Scraping and cleaning Yahoo stock data
+# ------------
+
 library(dplyr)
 library(stringr)
 library(rvest)
@@ -111,4 +117,3 @@ wtable <- wtable[rownames(wtable) != "Forward Dividend & Yield", , drop=FALSE]
 # Ex-Dividend Date
 rownames(wtable)[rownames(wtable) == "Ex-Dividend Date"] <- "ex_div_date"
 wtable['ex_div_date', ] <- wtable['ex_div_date', ] %>% as.numeric()
-

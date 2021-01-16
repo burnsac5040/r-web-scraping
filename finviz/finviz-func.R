@@ -1,9 +1,10 @@
-# ----
-# author: Lucas Burns
+# -------------
 # title: finviz.R
+# author: Lucas Burns
 # There may be 'NOTE:' scattered throughout because I am in the process of learning R and Vim highlights that word.
-# ----
-
+# -------------
+# Title:
+# INFO:
 library(dplyr)
 library(stringr)
 library(reshape)
@@ -124,6 +125,10 @@ fastfood <- list("McDonalds" = "MCD", "Wendys" = "WEN", "JackInBox" = "JACK",
 # ----------------------
 # Getting all the tables
 # ----------------------
+# NOTE: Alternative way to skip errors:
+    # skip_to_next <- FALSE
+    # tryCatch(tables[[8]], error = function(e) {skip_to_next <<- TRUE})
+    # if (skip_to_next) {next}
 
 get_specs <- function(tickers){
     parsed_specs <- data.frame()
@@ -131,7 +136,13 @@ get_specs <- function(tickers){
     for (ticker in tickers){
         page <- htmlParse(GET(paste0(base_url, ticker[[1]]), encoding = "UTF-8"))
         tables <- readHTMLTable(page)
-        wtable <- tables[[8]]
+
+        possibleError <- tryCatch(
+                wtable <- tables[[8]],
+                error = function(e) e
+                )
+
+        if (inherits(possibleError, "error")) next
 
         t2 <- wtable %>% select(1, 2)
         t4 <- wtable %>% select(3, 4)
@@ -170,3 +181,45 @@ industrial_df <- get_specs(unname(industrial))
 ff_df <- get_specs(unname(fastfood))
 
 tot_df <- rbind(financial_df, bigtech_df, consumer_df, industrial_df, ff_df)
+
+# -----------------------
+# Price Data: `fastfood`
+# -----------------------
+library(BatchGetSymbols)
+
+date1 <- Sys.Date() - 60
+date2 <- Sys.Date()
+
+bgs <- BatchGetSymbols(tickers = unname(fastfood),
+                first.date = date1,
+                last.date = date2,
+                freq.data = 'daily',
+                cache.folder = file.path(tempdir(),
+                                         "BGS_Cache"))
+
+bgs_tickers <- bgs$df.tickers
+
+# --------------------
+# S&P500: Stock Tickers
+# --------------------
+sp500 <- GetSP500Stocks()
+sp500_tickers <- sp500[, c("Tickers", "Company", "GICS.Sector")]
+
+samp_tick <- slice_sample(sp500_tickers, n=250)$Tickers
+
+# NOTE: Indexing a dataframe (similar to Python)
+# sp500[sp500$Tickers == "GOOG", ]
+# sp500_df[order(sp500_df$ticker),]
+
+sp500_df <- get_specs(samp_tick)
+
+# ------------------
+# S&P500: Stock Data
+# ------------------
+sp500_out <- BatchGetSymbols(tickers = sp500$Tickers,
+                first.date = date1,
+                last.date = date2,
+                freq.data = 'daily',
+                cache.folder = file.path(tempdir(),
+                                         "BGS_Cache"))
+sp500_out$df.tickers$ref.date
