@@ -8,12 +8,15 @@ library(rvest)
 library(httr)
 library(dplyr)
 library(stringr)
+library(magrittr)
 library(BatchGetSymbols)
 library(flipTime)
 library(data.table)
 library(ggplot2)
 library(tidyquant)
 library(glue)
+# install.packages('Rstem', repos = "http://www.omegahat.net/R")
+# devtools::install_github("timjurka/sentiment/sentiment")
 
 # ---------------
 # Getting tickers
@@ -65,7 +68,7 @@ get_newstable <- function(tickers){
 
         }
         all_dfs <- append(all_dfs, dfs)
-        glue("Completed ticker: {ticker}")
+        print(glue("Completed ticker: {ticker}"))
         Sys.sleep(3)
     }
     return(all_dfs)
@@ -81,9 +84,10 @@ pnews_df <- do.call(rbind, parsed_dfs)
 # NOTE: Alternative ways to read in a .tsv file
 # pnews_df <- read.table(file = "data/pnews_df.tsv", sep = "\t", header = TRUE)
 
-pnews_df <- as.data.frame(fread("data/pnews_df.tsv", quote = "", header = TRUE))
-sp500_df <- as.data.frame(fread("data/samp_sp500.tsv", quote = ""))
-# colnames(pnews_df) <- c("ticker", "date", "time", "headline")
+pnews_df <- as.data.frame(fread("data/50pnews_df-dirty.tsv", quote = "", header = TRUE))
+sp500_df <- as.data.frame(fread("data/50sector_df.tsv", quote = ""))
+colnames(pnews_df) <- c("ticker", "date", "time", "headline")
+pnews_df
 # pnews_df <- pnews_df[,-1]
 # pnews_df <- pnews_df[, !(names(pnews_df) %in% c("pdatetime"))]
 
@@ -92,10 +96,7 @@ pnews_df$datetime <- AsDateTime(pnews_df$datetime_, us.format = TRUE)
 pnews_df$datetime_ <- NULL
 
 pnews_df$headline %<>% tolower()
-
-pnews_df$headline <- gsub("(\\..*?\\.com)", "", pnews_df$headline)
-pnews_df$headline <- gsub("(yahoo finance|motley fool|zacks|reuters|insider monkey|business wire|marketwatch|smarteranalyst|benzinga|globenewswire|techcrunch|quartz|bloomberg|investopedia|newswire|tipranks)", "", pnews_df$headline)
-
+pnews_df$headline <- gsub("(yahoo finance|barrons.com|motley fool|zacks|reuters|insider monkey|business wire|marketwatch|smarteranalyst|benzinga|globenewswire|techcrunch|quartz|bloomberg|investopedia|newswire|tipranks)", "", pnews_df$headline)
 pnews_df$headline <- gsub("([[:punct:]]|[[:digit:]])", "", pnews_df$headline)
 pnews_df$headline <- str_squish(pnews_df$headline)
 
@@ -107,20 +108,56 @@ news_df <- copy(pnews_df)
 befjan <- news_df[news_df$datetime < as.POSIXct("2021-01-06"), ]
 aftjan <- news_df[news_df$datetime >= as.POSIXct("2021-01-06"), ]
 
-library(NLP)
-library(tm)
-library(wordcloud)
-library(RColorBrewer)
-library(twitteR)
-library(tidytext)
-library(sentimentr)
-library(tidytext)
-
 riot <- aftjan[aftjan$headline %like% "riot", ]
 capitol <- aftjan[aftjan$headline %like% "capitol", ]
 qanon <- aftjan[aftjan$headline %like% "qanon", ]
 war <- aftjan[aftjan$headline %like% "war", ]
 
+library(NLP)
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+library(sentimentr)
+library(tidytext)
+
+test <- slice_sample(news_df, n=20)
+
+riot <- news_df %>% filter(str_detect(news_df$headline, "riot"))
+riot
 
 write.table(pnews_df, file="data/pnews_df.tsv", quote = FALSE, sep="\t", row.names = FALSE)
 write.csv(pnews_df, file = "data/pnews_df.csv")
+
+#####################################################
+#################### TESTING NLP ####################
+#####################################################
+
+library(Rstem)
+library(sentiment)
+
+polarity_df <- classify_polarity(news_df$headline, algorithm = "bayes")
+polarity_df <- as.data.frame(fread("data/50polarity_df.tsv", quote = "", header = TRUE))
+
+polarity_df <- cbind(pnews_df, polarity_df)
+pos <- polarity_df[polarity_df$BEST_FIT == 'positive', ]
+neg <- polarity_df[polarity_df$BEST_FIT == 'negative', ]
+
+for (i in c(1:nrow(pos$headline))){
+  pos$headline[i, 1] <- wordStem(String(pos$headline[i, 1]))
+}
+
+stem <- function(list){
+  for (i in c(1:dim(pos)[[1]])){
+    list[i,1] <- wordStem(String(list[i,1]))
+  }
+  list <- unique(list[,1])
+}
+
+
+
+
+for (i in c(1:dim(pos)[[1]])){
+  print(i)
+}
+
+r <- unique
