@@ -3,8 +3,6 @@
 # author: Lucas Burns
 # There may be 'NOTE:' scattered throughout because I am in the process of learning R and Vim highlights that word.
 # -------------
-# Title:
-# INFO:
 library(dplyr)
 library(stringr)
 library(reshape)
