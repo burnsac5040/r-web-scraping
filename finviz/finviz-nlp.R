@@ -12,7 +12,7 @@ library(magrittr)
 library(BatchGetSymbols)
 library(flipTime)
 library(data.table)
-library(ggplot2)
+library(tidyverse)
 library(tidyquant)
 library(glue)
 # install.packages('Rstem', repos = "http://www.omegahat.net/R")
@@ -39,6 +39,7 @@ get_newstable <- function(tickers){
     for (ticker in tickers){
         skip <- FALSE
 
+        # catch error if page or table on page doesn't exist
         tryCatch({
             page <- read_html(paste0(base_url, ticker[[1]]))
             newstable <- html_nodes(page, "[id='news-table']") %>%
@@ -47,7 +48,7 @@ get_newstable <- function(tickers){
         error = function(e) {skip <<- TRUE}
         )
 
-        if (skip) {next}
+        if (skip) { next }
 
         news_df <- data.frame(newstable)
         dfs <- list()
@@ -112,6 +113,7 @@ pnews_df$headline <- str_squish(pnews_df$headline)
 ####################################################
 ###################### NLP #########################
 ####################################################
+
 news_df <- copy(pnews_df)
 
 # Separate dataframes of before the January 6th riot and after
@@ -130,7 +132,7 @@ war <- news_df %>% filter(str_detect(news_df$headline, "war"))
 # write.csv(pnews_df, file = "data/pnews_df.csv")
 
 #####################################################
-#################### TESTING NLP ####################
+################ Polarity / Emotion #################
 #####################################################
 
 library(Rstem)
@@ -152,15 +154,45 @@ pnews_df <- as.data.frame(fread("data/50pnews_df.tsv", quote = "", header = TRUE
 polarity_df <- as.data.frame(fread("data/50polarity_df.tsv", quote = "", header = TRUE))
 emotion_df <- as.data.frame(fread("data/50emotion_df.tsv", quote = "", header = TRUE))
 
-names(polarity_df)[names(polarity_df) == "BEST_FIT"] <- "pol_best"
-names(emotion_df)[names(emotion_df) == "BEST_FIT"] <- "emo_best"
+colnames(polarity_df)[colnames(polarity_df) == "BEST_FIT"] <- "pol_best"
+colnames(emotion_df)[colnames(emotion_df) == "BEST_FIT"] <- "emo_best"
 
 # Create a larger combined dataframe
 emopol_df <- cbind(pnews_df, polarity_df, emotion_df)
-emopol_df
+emopol_df <- emopol_df %>% mutate_at('emo_best', ~replace(., is.na(.), 'unknown'))
 
 pos <- emopol_df[emopol_df$pol_best == 'positive', ]
 neg <- emopol_df[emopol_df$pol_best == 'negative', ]
+
+print(glue("pos: {dim(pos)}, neg: {dim(neg)}"))
+
+# Turning best fit emotion to categories
+sel_df <- select(emopol_df, 1, 4, 5, 8:9, 16) %>% as.data.frame()
+
+colnames(sel_df)[colnames(sel_df) == "POS/NEG"] <- "pol_score"
+
+emo_df <- within(sel_df, emo_best <- factor(emo_best, levels = names(table(emo_best))))
+
+#####################################################
+##################### Plotting ######################
+#####################################################
+
+library(ggthemes)
+
+ggplot()
+
+
+p <- ggplot(emo_df, aes(x = emo_best)) +
+         geom_bar(aes(y = ..count.., fill = emo_best)) +
+         theme(plot.background = element_rect(fill = "darkgrey")) +
+         theme(panel.background = element_rect(fill = "grey")) +
+         scale_fill_brewer(palette = "Dark2") +
+         labs(title = "Classifying Emotion of Stock Headlines",
+             x = "Emotion", y = "Count")
+
+#####################################################
+##################### Stemming ######################
+#####################################################
 
 xxx <- slice_sample(pos, n=30)
 st <- xxx[['headline']]
@@ -176,24 +208,9 @@ get_wordlist <- function(list_){
   return(unique(wordlist))
 }
 
-stem <- function(list){
-  for (i in c(1:dim(pos)[[1]])){
-    list[i,1] <- wordStem(String(list[i,1]))
+get_stemmed <- function(wordlist){
+  for (i in c(1:length(wordlist))){
+    wordlist[i] <- wordStem(String(wordlist[i]))
   }
-  list <- unique(list[,1])
+  return(wordlist)
 }
-
-
-ww <- get_wordlist(st)
-ww
-
-for (i in c(1:length(ww))){
-
-}
-
-
-
-
-
-positive <- stem(ww)
-positive
