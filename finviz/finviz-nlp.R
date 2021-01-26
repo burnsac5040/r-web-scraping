@@ -13,8 +13,6 @@ library(BatchGetSymbols)
 library(flipTime)
 library(data.table)
 library(tidyverse)
-library(tidyquant)
-library(glue)
 # install.packages('Rstem', repos = "http://www.omegahat.net/R")
 # devtools::install_github("timjurka/sentiment/sentiment")
 
@@ -70,7 +68,7 @@ get_newstable <- function(tickers){
 
         }
         all_dfs <- append(all_dfs, dfs)
-        print(glue("Completed ticker: {ticker}"))
+        print(str_glue("Completed ticker: {ticker}"))
         Sys.sleep(3)
     }
     return(all_dfs)
@@ -116,10 +114,6 @@ pnews_df$headline <- str_squish(pnews_df$headline)
 
 news_df <- copy(pnews_df)
 
-# Separate dataframes of before the January 6th riot and after
-befjan <- news_df[news_df$datetime < as.POSIXct("2021-01-06"), ]
-aftjan <- news_df[news_df$datetime >= as.POSIXct("2021-01-06"), ]
-
 # Search for keywords
 # NOTE: Alternative way to search for a keyword, however the above picks up more
 # riot <- aftjan[aftjan$headline %like% "riot", ]
@@ -135,15 +129,14 @@ war <- news_df %>% filter(str_detect(news_df$headline, "war"))
 ################ Polarity / Emotion #################
 #####################################################
 
-library(Rstem)
-library(sentiment)
-
-library(NLP)
-library(tm)
+library(sentiment)      # Rstem, NLP, tm are required
 library(wordcloud)
-library(RColorBrewer)
 library(sentimentr)
 library(tidytext)
+library(tidyquant)      # Manipulation of time
+
+tidytext::stop_words
+tidytext::sentiments
 
 # Classify polarity and emotion
 polarity_df <- classify_polarity(pnews_df$headline, algorithm = "bayes")
@@ -155,6 +148,7 @@ polarity_df <- as.data.frame(fread("data/50polarity_df.tsv", quote = "", header 
 emotion_df <- as.data.frame(fread("data/50emotion_df.tsv", quote = "", header = TRUE))
 
 colnames(polarity_df)[colnames(polarity_df) == "BEST_FIT"] <- "pol_best"
+colnames(polarity_df)[colnames(polarity_df) == "POS/NEG"] <- "pos_neg"
 colnames(emotion_df)[colnames(emotion_df) == "BEST_FIT"] <- "emo_best"
 
 # Create a larger combined dataframe
@@ -171,24 +165,169 @@ sel_df <- select(emopol_df, 1, 4, 5, 8:9, 16) %>% as.data.frame()
 
 colnames(sel_df)[colnames(sel_df) == "POS/NEG"] <- "pol_score"
 
-emo_df <- within(sel_df, emo_best <- factor(emo_best, levels = names(table(emo_best))))
+emo_df <- within(sel_df,
+    emo_best <- factor(emo_best, levels = names(table(emo_best))),
+    pol_best <- factor(pol_best, levels = names(table(pol_best))))
 
 #####################################################
 ##################### Plotting ######################
 #####################################################
 
-library(ggthemes)
+emo_df <- as.data.frame(fread("data/50emo_df.tsv", quote = "", header = TRUE))
 
-ggplot()
+library(ggthemes)           # Theme ggplots
+library(RColorBrewer)       # Expand number of colors in palette
+library(ggplot2)            # Create plots
+library(reshape2)
+library(reshape)
 
 
+##### Polarity Category #####
+p <- ggplot(emo_df, aes(x = pol_best)) +
+        geom_bar(aes(y = ..count.., fill = pol_best)) +
+        theme(plot.background = element_rect(fill = "darkgrey")) +
+        theme(panel.background = element_rect(fill = "grey")) +
+        scale_fill_brewer(palette = "Dark2") +
+        labs(title = "Classifying Polarity of Stock Headlines",
+            x = "Polarity", y = "Count", caption = "Data source: finviz.com")
+
+##### Emotion Category #####
 p <- ggplot(emo_df, aes(x = emo_best)) +
          geom_bar(aes(y = ..count.., fill = emo_best)) +
          theme(plot.background = element_rect(fill = "darkgrey")) +
          theme(panel.background = element_rect(fill = "grey")) +
          scale_fill_brewer(palette = "Dark2") +
          labs(title = "Classifying Emotion of Stock Headlines",
-             x = "Emotion", y = "Count")
+             x = "Emotion", y = "Count", caption = "Data source: finviz.com")
+
+# Rename for convenience
+colnames(sp500_df)[colnames(sp500_df) == "Tickers"] <- "ticker"
+colnames(sp500_df)[colnames(sp500_df) == "GICS.Sector"] <- "sector"
+
+# Merge dataframes on ticker
+sec_df <- merge(sp500_df, emo_df, by = intersect(names(sp500_df), names(emo_df)))
+sec_df <- as.data.frame(fread("data/50sec_df.tsv", quote = "", header = TRUE))
+
+# Expand pallete from 8 colors to 11
+ncolors <- colorRampPalette(brewer.pal(8, "Dark2"))(11)
+
+##### Polarity and Sector #####
+p <- ggplot(sec_df, aes(pol_best, ..count..)) +
+        geom_bar(aes(fill = sector), position = "dodge") +
+        labs(title = "Polarity of Stock Sectors",
+            caption = "Data source: finviz.com") +
+        theme(plot.background = element_rect(fill = "gray19")) +
+        theme(panel.background = element_rect(fill = "gray31")) +
+        scale_fill_manual(values = ncolors) +
+        theme(axis.text.x = element_text(size = 14, color = "gray70"),
+               axis.title.x = element_text(size = 16, color = "gray85"),
+               axis.text.y = element_text(size = 14, color = "gray70"),
+               axis.title.y = element_text(size = 16, color = "gray85"),
+               plot.title = element_text(size = 20, face = "bold",
+                   color = "gray85", hjust = 0.5),
+               legend.background = element_rect(fill = "gray19"),
+               legend.text = element_text(size = 10, color = "gray70"),
+               legend.title = element_text(size = 14, color = "gray85"))
+
+##### Mean Polarity Score of Sectors #####
+sec <- sec_df %>%
+            group_by(sector) %>%
+            summarise(pol_score = mean(pol_score)
+
+p <- ggplot(sec, aes(x = sector, y = pol_score, fill = as.factor(sector))) +
+        geom_bar(stat = "identity") +
+        labs(title = "Mean of Sector's Polarity Score",
+                caption = "Data source: finviz.com", fill = 'Sector') +
+        theme(plot.background = element_rect(fill = "gray19")) +
+        theme(panel.background = element_rect(fill = "gray31")) +
+        scale_fill_manual(values = ncolors) +
+        theme(axis.text.x = element_text(size = 0),
+           axis.title.x = element_text(size = 16, color = "gray85"),
+           axis.text.y = element_text(size = 14, color = "gray70"),
+           axis.title.y = element_text(size = 16, color = "gray85"),
+           plot.title = element_text(size = 20, face = "bold",
+               color = "gray85", hjust = 0.5),
+           legend.background = element_rect(fill = "gray19"),
+           legend.text = element_text(size = 10, color = "gray70"),
+           legend.title = element_text(size = 14, color = "gray85"))
+
+# Rename anything containing "consumer" to just "consumer" to reduce number of sectors
+df <- copy(sec_df)
+for (s in 1:length(df$sector)){
+    if (str_detect(df$sector[[s]], "Consumer")){
+        df$sector[[s]] <- "Consumer"
+    }
+}
+
+# Create a column with a 1 if it is after January 6th, 0 if before
+df <- df %>%
+        mutate(aftjan = if_else(datetime >= as.POSIXct("2021-01-06"), 1, 0))
+
+# Rename the factors if so chooses
+# df$aftjan <- factor(df$aftjan, levels = c(0, 1), labels = c("befjan", "aftjan"))
+
+##### Polarity Before and After January 6th Riots #####
+p <- ggplot(df) +
+        geom_bar(aes(x = aftjan, y = pol_score, fill = as.factor(aftjan)),
+                stat = "summary", fun = "mean") +
+        labs(title = "Polarity Score Before & After January 6th",
+            caption = "Data source: finviz.com") +
+        scale_fill_discrete(name = "January 6th", labels = c("Before", "After")) +
+        theme(plot.background = element_rect(fill = "gray19")) +
+        theme(panel.background = element_rect(fill = "gray31")) +
+        theme(axis.text.x = element_text(size = 0),
+           axis.title.x = element_text(size = 16, color = "gray85"),
+           axis.text.y = element_text(size = 14, color = "gray70"),
+           axis.title.y = element_text(size = 16, color = "gray85"),
+           plot.title = element_text(size = 20, face = "bold",
+               color = "gray85", hjust = 0.5),
+           legend.background = element_rect(fill = "gray19"),
+           legend.text = element_text(size = 10, color = "gray70"),
+           legend.title = element_text(size = 14, color = "gray85"))
+# Surprised that the score higher after January 6th than what it is before
+
+##### Distribution of the Polarity Scores of Sectors #####
+# Can use coord_flip() to switch instead of manually changing axes
+p <- ggplot(sec_df, aes(x = sector, y = pol_score)) +
+        geom_boxplot(aes(fill = sector), notch = TRUE, outlier.color = "red3",
+            outlier.shape = 8, show.legend = FALSE) +
+        coord_flip() +
+        scale_fill_manual(values = ncolors) +
+        labs(title = "Dist. of the Polarity Scores of Stock Sectors",
+            caption = "Data source: finviz.com") +
+        stat_summary(fun = mean, geom = "point", shape = 5, size = 4) +
+        theme(plot.background = element_rect(fill = "gray19"),
+              panel.background = element_rect(fill = "gray31"),
+              axis.text.x = element_text(size = 14, color = "gray70"),
+              axis.title.x = element_text(size = 16, color = "gray85"),
+              axis.text.y = element_text(size = 8, color = "gray70"),
+              axis.title.y = element_text(size = 16, color = "gray85"),
+              plot.title = element_text(size = 20, face = "bold",
+                  color = "gray85", hjust = 0.5))
+# slice_max(sec_df, n = 10, order_by = pol_score)       # View highest polarity scores
+
+##### WordCloud #####
+# data("stop_words")
+tidytext::stop_words
+stopwords("en")
+library(wordcloud)
+
+plot_wordcloud <- function(topic) {
+    filter(str_detect(sec_df, topic)) %>%
+        group_by(ticker) %>%
+        unnest_tokens(word, sec_df) %>%
+        anti_join(stop_words) %>%
+        filter(!word %in% topic) %>%
+        count(ticker, word, sort = TRUE) %>%
+        acast(word ~ ticker, value.var = "n", fill = 0) %>%
+        comparison.cloud(colors = c("orange2", "gray20"),
+                         max.words = 200, random.order = FALSE)
+}
+
+plot_wordcloud("riot")
+
+comparison.cloud()
+
 
 #####################################################
 ##################### Stemming ######################
