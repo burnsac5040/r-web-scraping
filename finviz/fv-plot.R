@@ -4,15 +4,15 @@
 # description: Sentiment analysis on finviz.com stock headlines
 # -------------------
 
-library(rvest)
-library(httr)
-library(dplyr)
-library(stringr)
-library(magrittr)
-library(BatchGetSymbols)
-library(flipTime)
-library(data.table)
-library(tidyverse)
+library(rvest)                  # web scraping
+library(httr)                   # web scraping
+library(dplyr)                  # data wrangling/manipulation
+library(stringr)                # string manipulation
+library(magrittr)               # piping
+library(BatchGetSymbols)        # get stock information
+library(flipTime)               # datetime manipulation
+library(data.table)             # import/export data
+library(tidyverse)              # bunch of data science tools
 # install.packages('Rstem', repos = "http://www.omegahat.net/R")
 # devtools::install_github("timjurka/sentiment/sentiment")
 
@@ -107,36 +107,17 @@ pnews_df$headline <- gsub("([[:punct:]]|[[:digit:]])", "", pnews_df$headline)
 pnews_df$headline <- gsub("\\bpr\\b", "", pnews_df$headline)
 pnews_df$headline <- str_squish(pnews_df$headline)
 
-
-####################################################
-###################### NLP #########################
-####################################################
-
-news_df <- copy(pnews_df)
-
-# Search for keywords
-# NOTE: Alternative way to search for a keyword, however the above picks up more
-# riot <- aftjan[aftjan$headline %like% "riot", ]
-riot <- news_df %>% filter(str_detect(news_df$headline, "riot"))
-capitol <- news_df %>% filter(str_detect(news_df$headline, "capitol"))
-qanon <- news_df %>% filter(str_detect(news_df$headline, "qanon"))
-war <- news_df %>% filter(str_detect(news_df$headline, "war"))
-
-# write.table(pnews_df, file="data/pnews_df.tsv", quote = FALSE, sep="\t", row.names = FALSE)
-# write.csv(pnews_df, file = "data/pnews_df.csv")
+# NOTE: Figuring this out after the fact:
+    # Putting this here to show that there are multiple ways of doing things
+# tm_map(pnews_df$headline, content_transformer(removePunctuation))
+# tm_map(pnews_df$headline, content_transformer(removeNumbers))
+# tm_map(pnews_df$headline, content_transformer(tolower))
 
 #####################################################
 ################ Polarity / Emotion #################
 #####################################################
 
 library(sentiment)      # Rstem, NLP, tm are required
-library(wordcloud)
-library(sentimentr)
-library(tidytext)
-library(tidyquant)      # Manipulation of time
-
-tidytext::stop_words
-tidytext::sentiments
 
 # Classify polarity and emotion
 polarity_df <- classify_polarity(pnews_df$headline, algorithm = "bayes")
@@ -175,12 +156,10 @@ emo_df <- within(sel_df,
 
 emo_df <- as.data.frame(fread("data/50emo_df.tsv", quote = "", header = TRUE))
 
-library(ggthemes)           # Theme ggplots
-library(RColorBrewer)       # Expand number of colors in palette
+library(ggthemes)           # theme ggplots
+library(RColorBrewer)       # expand number of colors in palette
 library(ggplot2)            # Create plots
-library(reshape2)
-library(reshape)
-
+library(reshape2)           # more efficient reshape
 
 ##### Polarity Category #####
 p <- ggplot(emo_df, aes(x = pol_best)) +
@@ -242,14 +221,14 @@ p <- ggplot(sec, aes(x = sector, y = pol_score, fill = as.factor(sector))) +
         theme(panel.background = element_rect(fill = "gray31")) +
         scale_fill_manual(values = ncolors) +
         theme(axis.text.x = element_text(size = 0),
-           axis.title.x = element_text(size = 16, color = "gray85"),
-           axis.text.y = element_text(size = 14, color = "gray70"),
-           axis.title.y = element_text(size = 16, color = "gray85"),
-           plot.title = element_text(size = 20, face = "bold",
-               color = "gray85", hjust = 0.5),
-           legend.background = element_rect(fill = "gray19"),
-           legend.text = element_text(size = 10, color = "gray70"),
-           legend.title = element_text(size = 14, color = "gray85"))
+              axis.title.x = element_text(size = 16, color = "gray85"),
+              axis.text.y = element_text(size = 14, color = "gray70"),
+              axis.title.y = element_text(size = 16, color = "gray85"),
+              plot.title = element_text(size = 20, face = "bold",
+                 color = "gray85", hjust = 0.5),
+              legend.background = element_rect(fill = "gray19"),
+              legend.text = element_text(size = 10, color = "gray70"),
+              legend.title = element_text(size = 14, color = "gray85"))
 
 # Rename anything containing "consumer" to just "consumer" to reduce number of sectors
 df <- copy(sec_df)
@@ -284,7 +263,9 @@ p <- ggplot(df) +
            legend.background = element_rect(fill = "gray19"),
            legend.text = element_text(size = 10, color = "gray70"),
            legend.title = element_text(size = 14, color = "gray85"))
-# Surprised that the score higher after January 6th than what it is before
+# Surprised that the score is higher after January 6th than what it is before
+# However, this is definitely not the best way to determine this.
+# Cleaning the headlines a little more would help
 
 ##### Distribution of the Polarity Scores of Sectors #####
 # Can use coord_flip() to switch instead of manually changing axes
@@ -305,51 +286,3 @@ p <- ggplot(sec_df, aes(x = sector, y = pol_score)) +
               plot.title = element_text(size = 20, face = "bold",
                   color = "gray85", hjust = 0.5))
 # slice_max(sec_df, n = 10, order_by = pol_score)       # View highest polarity scores
-
-##### WordCloud #####
-# data("stop_words")
-tidytext::stop_words
-stopwords("en")
-library(wordcloud)
-
-plot_wordcloud <- function(topic) {
-    filter(str_detect(sec_df, topic)) %>%
-        group_by(ticker) %>%
-        unnest_tokens(word, sec_df) %>%
-        anti_join(stop_words) %>%
-        filter(!word %in% topic) %>%
-        count(ticker, word, sort = TRUE) %>%
-        acast(word ~ ticker, value.var = "n", fill = 0) %>%
-        comparison.cloud(colors = c("orange2", "gray20"),
-                         max.words = 200, random.order = FALSE)
-}
-
-plot_wordcloud("riot")
-
-comparison.cloud()
-
-
-#####################################################
-##################### Stemming ######################
-#####################################################
-
-xxx <- slice_sample(pos, n=30)
-st <- xxx[['headline']]
-
-get_wordlist <- function(list_){
-  wordlist <- c()
-  for (line_ in list_){
-    words_ <- words(line_)
-    for (word_ in words_){
-      wordlist <- append(wordlist, word_)
-    }
-  }
-  return(unique(wordlist))
-}
-
-get_stemmed <- function(wordlist){
-  for (i in c(1:length(wordlist))){
-    wordlist[i] <- wordStem(String(wordlist[i]))
-  }
-  return(wordlist)
-}
