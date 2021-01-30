@@ -1,21 +1,22 @@
-# -------------
-# title: finviz.R
+# ==================
+# title: fv-scrape.R
 # author: Lucas Burns
-# There may be 'NOTE:' scattered throughout because I am in the process of learning R and Vim highlights that word.
-# -------------
-library(dplyr)
-library(stringr)
-library(reshape)
-library(rvest)
-library(httr)
-library(XML)
-library(RCurl)
+# description: Function for eb scraping stock data at finviz.com
+# ==================
+
+library(dplyr)          # data wrangling
+library(stringr)        # string functions
+library(reshape)        # more efficient reshape
+library(rvest)          # web scraping tool
+library(httr)           # web scraping tool
 
 ##############################################
 ################## One Page ##################
 ##############################################
 
-#### Chart ####
+# =====
+# Chart
+# =====
 
 base_url <- "https://finviz.com/quote.ashx?t="
 tickers <- c("HD")
@@ -54,7 +55,11 @@ tot <- within(tot, rm(Spec))
 tot <- as.data.frame(t(as.matrix(tot))) # Transpose dataframe
 rownames(tot) <- tickers[[1]]
 
-#### News Articles ####
+
+# ============
+# News Article
+# ============
+
 page <- read_html(paste0(base_url, tickers[[1]]))
 # newstable <- html_nodes(page, "table")[[32]] %>% html_table(fill=TRUE)
 # NOTE: Better way to scrape, can use id/class (similar to BeautifulSoup)
@@ -97,8 +102,9 @@ parsed_df <- do.call(rbind, dfs)
 ############### Multiple Pages ###############
 ##############################################
 
-# Categories -- Some of these may not be split up exactly
-# ----------
+# ==========
+# Categories -- Some of these may not be split up perfectly
+# ==========
 
 financial <- list("Paypal" = "PYPL", "Visa" = "V", "Mastercard" = "MA",
                "Discover" = "DFS", "CitiGroup" = "C", "Square" = "SQ",
@@ -120,9 +126,9 @@ industrial <- list("3M" = "MMM", "GenElect" = "GE", "KCSouth" = "KSU",
 fastfood <- list("McDonalds" = "MCD", "Wendys" = "WEN", "JackInBox" = "JACK",
               "Dominos" = "DPZ", "Chipotle" = "CMG", "RestBrandInt" = "QSR")
 
-# ----------------------
+# ======================
 # Getting all the tables
-# ----------------------
+# ======================
 # NOTE: Alternative way to skip errors:
     # skip_to_next <- FALSE
     # tryCatch(tables[[8]], error = function(e) {skip_to_next <<- TRUE})
@@ -180,9 +186,11 @@ ff_df <- get_specs(unname(fastfood))
 
 tot_df <- rbind(financial_df, bigtech_df, consumer_df, industrial_df, ff_df)
 
-# -----------------------
+
+# ======================
 # Price Data: `fastfood`
-# -----------------------
+# ======================
+
 library(BatchGetSymbols)
 
 date1 <- Sys.Date() - 60
@@ -197,9 +205,11 @@ bgs <- BatchGetSymbols(tickers = unname(fastfood),
 
 bgs_tickers <- bgs$df.tickers
 
-# --------------------
+
+# ======================
 # S&P500: Stock Tickers
-# --------------------
+# ======================
+
 sp500 <- GetSP500Stocks()
 sp500_tickers <- sp500[, c("Tickers", "Company", "GICS.Sector")]
 
@@ -211,9 +221,11 @@ samp_tick <- slice_sample(sp500_tickers, n=250)$Tickers
 
 sp500_df <- get_specs(samp_tick)
 
-# ------------------
+
+# ==================
 # S&P500: Stock Data
-# ------------------
+# ==================
+
 sp500_out <- BatchGetSymbols(tickers = sp500$Tickers,
                 first.date = date1,
                 last.date = date2,
