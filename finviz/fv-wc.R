@@ -25,13 +25,13 @@ library(reshape2)       # more efficient reshape
 
 library(tokenizers)
 library(syuzhet)
-library(tm)
 
+# ==============
 # Importing data
 # ==============
 sec_df <- as.data.frame(fread("data/50sec_df.tsv", quote = "", header = TRUE))
 sel_df <- as.data.frame(fread("data/50sel_df.tsv", quote = "", header = TRUE))
-tt <- slice_sample(sel_df, n=200) # Testing dataframe
+tt <- slice_sample(sel_df, n=200)                           # testing dataframe
 
 # Create a custom negate function
 "%ni%" <- Negate("%in%")
@@ -86,69 +86,92 @@ wcloud_wsearch <- function(phrase){
 wcloud_wsearch("riot")
 
 
-# =========
-# Sentiment
-# =========
-library(janitor)
-library(ggpubr)
-library(RColorBrewer)
-
+# Set default theme and palette
 ggtheme <- list(
     theme_bw(),
     scale_color_brewer(palette = "Dark2")
 )
 
+# Set a wrapper for ggplot theme and palette
 ggcust <- function(...){
     ggplot(...) +
       theme_bw() +
       scale_color_brewer(palette = "Dark2")
 }
 
-ii <- tt %>% group_by(FLOOR_DATE(as.POSIXct(.$datetime))) %>% unnest_tokens(word, headline) %>% merge(get_sentiments("nrc")) %>% clean_names() %>% dplyr::rename(date = floor_date_as_posi_xct_datetime) %>% mutate(sentiment = factor(sentiment, levels = unique(sentiment))) %>% count(c("date", "sentiment")) %>% mutate(aftjan = if_else(date >= as.POSIXct("2021-01-06"), 1, 0))
+# ===============================================
+# Plotting Sentiment before and after January 6th
+# ===============================================
+library(janitor)          # cleaning data
+library(ggpubr)           # combining plots
+library(RColorBrewer)     # theming / coloring plots
 
-aa <- dplyr::count(ii, sentiment, aftjan)
-aa <- group_by(aa, sentiment, aftjan)
-aa <- mutate(aa, prop = n / sum(n))
+temp <- sel_df %>%
+          group_by(FLOOR_DATE(as.POSIXct(.$datetime))) %>%
+          unnest_tokens(word, headline) %>%
+          merge(get_sentiments("nrc")) %>%
+          clean_names() %>%
+          dplyr::rename(date = floor_date_as_posi_xct_datetime) %>%
+          mutate(sentiment = factor(sentiment, levels = unique(sentiment))) %>%
+          count(c("date", "sentiment")) %>%
+          mutate(aftjan = if_else(date >= as.POSIXct("2021-01-06"), 1, 0))
 
-ggplot(ii, aes(sentiment, freq, fill = date)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~aftjan, nrow=2, scales = "fixed")
+temp$date <- NULL
 
-# Displays percent below bars / count = y
-ggplot(ii, aes(x = sentiment, group = aftjan)) +
-  geom_col(aes(y = freq, fill = factor(..x..)), show.legend = FALSE) +
-  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat = "count", show.legend = FALSE) +
-  geom_text(aes(label = scales::percent(..prop..),
-                y = ..prop..), stat = "count", vjust = -.5) +
-  facet_wrap(~aftjan, nrow=2, scales = "free_x")
-
-# Displays percent below bars / count = y
-ggplot(ii, aes(x=sentiment, group = aftjan)) +
-  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat = "count", show.legend = FALSE) +
-  geom_bar(aes(y = ..count.., fill = factor(..x..)), stat = "count") +
-  geom_text(aes(label = scales::percent(..prop..),
-                y = ..prop..), stat = "count", vjust = -.5) +
-  scale_color_manual(palette = "Set1") +
-  facet_wrap(~aftjan, nrow = 2, scales = "fixed")
-  scale_y_continuous(labels = scales::percent)
-
-
-# Displays percent above bars / percent = y
-ggplot(ii, aes(x=sentiment, group = aftjan)) +
-  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat = "count", show.legend = FALSE) +
-  geom_text(aes(label = scales::percent(..prop..),
-                y = ..prop..), stat = "count", vjust = -.5) +
-  scale_color_manual(palette = "Set1") +
-  facet_wrap(~aftjan, nrow = 2, scales = "fixed") +
-  scale_y_continuous(labels = scales::percent)
+# Displays frequency of sentiments based on 'aftjan'
+p <- temp %>%
+         group_by(aftjan, sentiment) %>%
+         dplyr::summarize(across(freq, sum)) %>%
+         ggplot(aes(x = sentiment, group = aftjan)) +
+         geom_col(aes(y = freq, fill = sentiment), show.legend = FALSE) +
+         facet_wrap(~ aftjan, nrow = 2, scales = "free")
 
 # Displays count above bars / percent = y
-ggplot(ii, aes(x=sentiment, group = aftjan)) +
-  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat = "count", show.legend = FALSE) +
-  geom_text(aes(label = ..count.., y = ..prop..), stat = "count", vjust = -.5) +
-  labs(y = "percent", fill = "sentiment") +
-  facet_wrap(~aftjan, nrow=2, scales = "fixed") +
-  scale_y_continuous(labels = scales::percent)
+ap <- temp %>%
+      ggplot(aes(x = sentiment, group = aftjan)) +
+      geom_bar(aes(y = ..prop.., fill = factor(..x..)),stat = "count", show.legend = FALSE) +
+      geom_text(aes(label = ..count.., y = ..prop..), stat = "count", vjust = -0.5) +
+      labs(y = "percent", fill = "sentiment") +
+      facet_wrap(~ aftjan, nrow = 2, scales = "fixed") +
+      scale_y_continuous(labels = scales::percent)
+
+
+ggarrange(ap, p)
+
+# =================
+# Alternative plot: Displays percent above bars / percent = y-axis
+# =================
+p <- ggplot(ii, aes(x=sentiment, group = aftjan)) +
+        geom_bar(aes(y = ..prop.., fill = date), stat = "count", show.legend = FALSE) +
+        geom_text(aes(label = scales::percent(..prop..),
+                      y = ..prop..), stat = "count", vjust = -.5) +
+        facet_wrap(~aftjan, nrow = 2, scales = "fixed") +
+        scale_y_continuous(labels = scales::percent)
+
+
+# =====================
+# Overall frequencies of sentiments
+# =====================
+library(grid)
+library(gridExtra)
+
+aggregate(freq ~ sentiment, temp, sum) %>%
+  ggcust(aes(x = sentiment, y = freq, fill = sentiment)) +
+  geom_bar(stat = 'identity', show.legend = FALSE)
+
+temp %>%
+   group_by(aftjan, sentiment) %>%
+   dplyr::summarize(across(freq, sum)) %>%
+   spread(sentiment, freq) -> pct
+
+bjan <- round(pct[1,2:ncol(pct)] / rowSums(pct[1,2:ncol(pct)]), 3)
+ajan <- round(pct[2,2:ncol(pct)] / rowSums(pct[2,2:ncol(pct)]), 3)
+
+pct <- rbind(pct, cbind(aftjan = 0, bjan), cbind(aftjan = 1, ajan))
+
+grid.table(pct)
+# After January 6th, positivity, joy, and trust decreased
+# Negativity, disgust, sadness, fear, agner, anticipation, and surprise increased
 
 
 #####################################################
