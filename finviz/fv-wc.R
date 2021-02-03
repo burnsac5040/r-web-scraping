@@ -1,18 +1,17 @@
 # ===============
-# title: fv-wc.R
+# title: fv-wc.R - (3)
 # author: Lucas Burns
-# description:
+# description: More plotting of finviz.com stock headlines
 # ===============
 
 library(sentimentr)     # nlp tools
 library(tm)             # nlp tools
 library(tidytext)       # nlp tools
-library(qdap)           # nlp tools
 
 library(tidyquant)      # manipulation of time
 library(wordcloud)      # generate wordcloud
 library(dplyr)          # data wrangling/manipulation
-library(plyr)           # data wrangling/manipulation
+
 library(stringr)        # string manipulation
 library(magrittr)       # piping
 library(data.table)     # import/export data
@@ -23,8 +22,24 @@ library(ggthemes)       # theme ggplots
 library(RColorBrewer)   # expand number of colors in palette
 library(reshape2)       # more efficient reshape
 
-library(tokenizers)
-library(syuzhet)
+
+# ===============================
+# set default theme and palette
+ggtheme <- list(
+    theme_bw(),
+    scale_color_brewer(palette = "Dark2")
+)
+
+# set a wrapper for ggplot theme and palette
+ncolors <- colorRampPalette(brewer.pal(8, "Dark2"))(11)
+
+ggcust <- function(...){
+    ggplot(...) +
+      theme_bw() +
+      scale_fill_manual(values = ncolors)
+}
+# ===============================
+
 
 # ==============
 # Importing data
@@ -85,29 +100,14 @@ wcloud_wsearch <- function(phrase){
 
 wcloud_wsearch("riot")
 
-
-# Set default theme and palette
-ggtheme <- list(
-    theme_bw(),
-    scale_color_brewer(palette = "Dark2")
-)
-
-# Set a wrapper for ggplot theme and palette
-ggcust <- function(...){
-    ggplot(...) +
-      theme_bw() +
-      scale_color_brewer(palette = "Dark2")
-}
-
 # ===============================================
-# Plotting Sentiment before and after January 6th
+# Plotting sentiment before and after january 6th
 # ===============================================
 library(janitor)          # cleaning data
 library(ggpubr)           # combining plots
-library(RColorBrewer)     # theming / coloring plots
 
 temp <- sel_df %>%
-          group_by(FLOOR_DATE(as.POSIXct(.$datetime))) %>%
+          group_by(floor_date(as.POSIXct(.$datetime))) %>%
           unnest_tokens(word, headline) %>%
           merge(get_sentiments("nrc")) %>%
           clean_names() %>%
@@ -116,33 +116,34 @@ temp <- sel_df %>%
           count(c("date", "sentiment")) %>%
           mutate(aftjan = if_else(date >= as.POSIXct("2021-01-06"), 1, 0))
 
-temp$date <- NULL
+temp$date <- null
 
 # Displays frequency of sentiments based on 'aftjan'
 p <- temp %>%
          group_by(aftjan, sentiment) %>%
          dplyr::summarize(across(freq, sum)) %>%
          ggplot(aes(x = sentiment, group = aftjan)) +
-         geom_col(aes(y = freq, fill = sentiment), show.legend = FALSE) +
+         geom_col(aes(y = freq, fill = sentiment), show.legend = false) +
          facet_wrap(~ aftjan, nrow = 2, scales = "free")
 
 # Displays count above bars / percent = y
 ap <- temp %>%
       ggplot(aes(x = sentiment, group = aftjan)) +
-      geom_bar(aes(y = ..prop.., fill = factor(..x..)),stat = "count", show.legend = FALSE) +
+      geom_bar(aes(y = ..prop.., fill = factor(..x..)),stat = "count", show.legend = false) +
       geom_text(aes(label = ..count.., y = ..prop..), stat = "count", vjust = -0.5) +
       labs(y = "percent", fill = "sentiment") +
       facet_wrap(~ aftjan, nrow = 2, scales = "fixed") +
       scale_y_continuous(labels = scales::percent)
 
-
+# Combine plots
 ggarrange(ap, p)
 
+
 # =================
-# Alternative plot: Displays percent above bars / percent = y-axis
+# Alternative plot: displays percent above bars / percent = y-axis
 # =================
 p <- ggplot(ii, aes(x=sentiment, group = aftjan)) +
-        geom_bar(aes(y = ..prop.., fill = date), stat = "count", show.legend = FALSE) +
+        geom_bar(aes(y = ..prop.., fill = date), stat = "count", show.legend = false) +
         geom_text(aes(label = scales::percent(..prop..),
                       y = ..prop..), stat = "count", vjust = -.5) +
         facet_wrap(~aftjan, nrow = 2, scales = "fixed") +
@@ -153,30 +154,55 @@ p <- ggplot(ii, aes(x=sentiment, group = aftjan)) +
 # Overall frequencies of sentiments
 # =====================
 library(grid)
-library(gridExtra)
+library(gridextra)
 
 aggregate(freq ~ sentiment, temp, sum) %>%
   ggcust(aes(x = sentiment, y = freq, fill = sentiment)) +
-  geom_bar(stat = 'identity', show.legend = FALSE)
+  geom_bar(stat = 'identity', show.legend = false)
 
 temp %>%
    group_by(aftjan, sentiment) %>%
    dplyr::summarize(across(freq, sum)) %>%
    spread(sentiment, freq) -> pct
 
-bjan <- round(pct[1,2:ncol(pct)] / rowSums(pct[1,2:ncol(pct)]), 3)
-ajan <- round(pct[2,2:ncol(pct)] / rowSums(pct[2,2:ncol(pct)]), 3)
+bjan <- round(pct[1,2:ncol(pct)] / rowsums(pct[1,2:ncol(pct)]), 3)
+ajan <- round(pct[2,2:ncol(pct)] / rowsums(pct[2,2:ncol(pct)]), 3)
 
 pct <- rbind(pct, cbind(aftjan = 0, bjan), cbind(aftjan = 1, ajan))
 
 grid.table(pct)
 # After January 6th, positivity, joy, and trust decreased
-# Negativity, disgust, sadness, fear, agner, anticipation, and surprise increased
+# negativity, disgust, sadness, fear, agner, anticipation, and surprise increased
 
 
-#####################################################
-##################### Stemming ######################
-#####################################################
+# ============================
+# Sentiment by word and sector
+# ============================
+get_secsent <- function(term) {
+  sel_df %>%
+      filter(grepl(term, headline)) %>%
+      mutate(floor_date = floor_date(as.POSIXct(datetime))) %>%
+      sentimentr::get_sentences() %$%
+      sentiment_by(., by = c("headline", "floor_date", "sector")) %>%
+      .[, -c("sd")] %>%
+      .[ave_sentiment != 0] -> secsent
+
+  ggcust(secsent, aes(floor_date, ave_sentiment)) +
+    geom_point(aes(size = word_count, color = sector)) +
+    geom_hline(yintercept = 0) +
+    geom_smooth(linetype = 0)
+}
+
+get_secsent("capitol")
+
+# ========
+# Stemming
+# ========
+# Unused libraries (so far)
+library(tokenizers)
+library(syuzhet)
+library(qdap)           # nlp tools
+
 
 xxx <- slice_sample(pos, n=30)
 st <- xxx[['headline']]
