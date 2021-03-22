@@ -22,7 +22,7 @@ library(tidyverse)              # bunch of data science tools
 
 sp500 <- GetSP500Stocks()
 sp500_tickers <- sp500[, c("Tickers", "Company", "GICS.Sector")]
-samp_sp500 <- samp_sp500[!grepl("\\.", samp_sp500$Tickers), ]
+samp_sp500 <- sp500[!grepl("\\.", sp500$Tickers), ]
 samp_tick <- samp_sp500$Tickers
 
 base_url <- "https://finviz.com/quote.ashx?t="
@@ -80,8 +80,8 @@ pnews_df <- do.call(rbind, parsed_dfs)
 # NOTE: Alternative way to read a .tsv file
 # pnews_df <- read.table(file = "data/pnews_df.tsv", sep = "\t", header = TRUE)
 
-pnews_df <- as.data.frame(fread("data/50pnews_df-dirty.tsv", quote = "", header = TRUE))
-sp500_df <- as.data.frame(fread("data/50sector_df.tsv", quote = ""))
+pnews_df <- as.data.frame(fread("../data/50pnews_df-dirty.tsv", quote = "", header = TRUE))
+sp500_df <- as.data.frame(fread("../data/50sector_df.tsv", quote = ""))
 
 colnames(pnews_df) <- c("ticker", "date", "time", "headline")
 
@@ -127,6 +127,7 @@ library(sentiment)      # Rstem, NLP, tm are required
 library(sentimentr)
 library(syuzhet)
 library(tidytext)
+library(glue)
 
 # Classify polarity and emotion on entire dataframe
 polarity_df <- classify_polarity(pnews_df$headline, algorithm = "bayes")
@@ -140,9 +141,9 @@ nrc <- pnews_df$headline %>% get_sentences() %>% get_nrc_sentiment()
 
 
 # Read back in the dataframes
-pnews_df <- as.data.frame(fread("data/50pnews_df.tsv", quote = "", header = TRUE))
-polarity_df <- as.data.frame(fread("data/50polarity_df.tsv", quote = "", header = TRUE))
-emotion_df <- as.data.frame(fread("data/50emotion_df.tsv", quote = "", header = TRUE))
+pnews_df <- as.data.frame(fread("../data/50pnews_df.tsv", quote = "", header = TRUE))
+polarity_df <- as.data.frame(fread("../data/50polarity_df.tsv", quote = "", header = TRUE))
+emotion_df <- as.data.frame(fread("../data/50emotion_df.tsv", quote = "", header = TRUE))
 
 # Rename columns for convenience
 colnames(polarity_df)[colnames(polarity_df) == "BEST_FIT"] <- "pol_best"
@@ -172,7 +173,7 @@ emo_df <- within(sel_df,
 ##################### Plotting ######################
 #####################################################
 
-emo_df <- as.data.frame(fread("data/50emo_df.tsv", quote = "", header = TRUE))
+emo_df <- as.data.frame(fread("../data/50emo_df.tsv", quote = "", header = TRUE))
 
 library(ggthemes)           # theme ggplots
 library(RColorBrewer)       # expand number of colors in palette
@@ -190,6 +191,8 @@ p <- ggplot(emo_df, aes(x = pol_best)) +
         labs(title = "Classifying Polarity of Stock Headlines",
             x = "Polarity", y = "Count", caption = "Data source: finviz.com")
 
+# Positive = ~32000, Neutral ~5000, Negative ~12500
+
 # ================
 # Emotion category
 # ================
@@ -201,13 +204,15 @@ p <- ggplot(emo_df, aes(x = emo_best)) +
          labs(title = "Classifying Emotion of Stock Headlines",
              x = "Emotion", y = "Count", caption = "Data source: finviz.com")
 
+# Order most to least frequent: joy, surprise, anger, fear, sadness, disgust
+
 # Rename for convenience
 colnames(sp500_df)[colnames(sp500_df) == "Tickers"] <- "ticker"
 colnames(sp500_df)[colnames(sp500_df) == "GICS.Sector"] <- "sector"
 
 # Merge dataframes on ticker
 sec_df <- merge(sp500_df, emo_df, by = intersect(names(sp500_df), names(emo_df)))
-sec_df <- as.data.frame(fread("data/50sec_df.tsv", quote = "", header = TRUE))
+sec_df <- as.data.frame(fread("../data/50sec_df.tsv", quote = "", header = TRUE))
 
 # Expand color palette from 8 colors to 11
 ncolors <- colorRampPalette(brewer.pal(8, "Dark2"))(11)
@@ -235,9 +240,10 @@ p <- ggplot(sec_df, aes(pol_best, ..count..)) +
 # ==============================
 # Mean polarity score of sectors
 # ==============================
+
 sec <- sec_df %>%
-    group_by(sector) %>%
-    summarise(pol_score = mean(pol_score)
+  group_by(sector) %>%
+  summarise(pol_score = mean(pol_score))
 
 p <- ggplot(sec, aes(x = sector, y = pol_score, fill = as.factor(sector))) +
         geom_bar(stat = "identity") +

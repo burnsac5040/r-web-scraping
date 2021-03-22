@@ -13,8 +13,8 @@ There is not much to this project.  The goal was to scrape [InvestorsHub](https:
 ------
 ### [Finviz](finviz)
 
-- [Scraping](finviz/notebooks/fv-scrape.R): `rvest` and `httr` were used to scrape [Finviz](https://finviz.com) for news headlines about the stocks found in the S&P500.
+- [Scraping](finviz/notebooks/fv-scrape.R): `rvest` and `httr` were used to scrape [Finviz](https://finviz.com) for news headlines about the stocks found in the S&P 500.
 
-- [Cleaning / Sentiment Analysis](finviz/notebooks/fv-plot.R): The data was cleaned and the polarity and emotion of each headline was classified.  Lastly in this file, various graphs comparing polarity and emotional scores of the headlines across dates, sectors, etc. were created.  I did find that the emotional polarity of the headlines changed a little more to the negative side after the January 6th, 2021 riots at the capitol.  There could definitely be a better place to get the data from where the stock headlines come from more places, as well as having more than the S&P500 stocks being the only headlines collected.
+- [Cleaning / Sentiment Analysis](finviz/notebooks/fv-plot.R): The data was cleaned and the polarity and emotion of each headline was classified.  Lastly in this file, various graphs comparing polarity and emotional scores of the headlines across dates, sectors, etc. were created.  I did find that the emotional polarity of the headlines changed a little more to the negative side after the January 6th, 2021 riots at the capitol.  There are more and better places to collect news headlines about stocks.  This project could be improved by using more sites than Finviz, as well as collecting headlines about stocks not found in the S&P 500.
 
 - [Plotting Continued](finviz/notebooks/fv-wc.R): A few more plots about the sentiment of the headlines before and after January 6th were created, as well as a wordcloud.  The project was left (for now) with stemming of words starting to be done.

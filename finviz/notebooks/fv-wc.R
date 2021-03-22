@@ -44,8 +44,8 @@ ggcust <- function(...){
 # ==============
 # Importing data
 # ==============
-sec_df <- as.data.frame(fread("data/50sec_df.tsv", quote = "", header = TRUE))
-sel_df <- as.data.frame(fread("data/50sel_df.tsv", quote = "", header = TRUE))
+sec_df <- as.data.frame(fread("../data/50sec_df.tsv", quote = "", header = TRUE))
+sel_df <- as.data.frame(fread("../data/50sel_df.tsv", quote = "", header = TRUE))
 tt <- slice_sample(sel_df, n=200)                           # testing dataframe
 
 # Create a custom negate function
