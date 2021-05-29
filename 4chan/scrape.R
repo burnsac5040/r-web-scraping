@@ -6,15 +6,17 @@
 ############################################################################
 
 # == imports == {{{
-library(dplyr)    # data manipulation
-library(stringr)  # string operations
-library(magrittr) # includes '%>%' chain op
-library(httr)     # web scraping
-library(rvest)    # web scraping
-library(XML)      # used in conj w/ rvest
-library(purrr)    # vector ops, including 'map'
-library(zeallot)  # %<-% operator for multiple var assignment
-library(glue)     # like python f-string
+library(data.table)      # table manipulation
+library(dplyr)           # data manipulation
+library(splitstackshape) # splitting data.table
+library(stringr)         # string operations
+library(magrittr)        # includes '%>%' chain op
+library(httr)            # web scraping
+library(rvest)           # web scraping
+library(XML)             # used in conj w/ rvest
+library(purrr)           # vector ops, including 'map'
+library(zeallot)         # %<-% operator for multiple var assignment
+library(glue)            # like python f-string
 # library(comprehenr) # like python list comprehension
 # }}} == imports ==
 
@@ -57,7 +59,7 @@ rm_na <- function(l2trans, t2repl) {
 #' Convert MB to KB
 #'
 #' @param l2trans List to transform
-mb2kb <- function (l2trans) {
+mb2kb <- function(l2trans) {
   lapply(
     l2trans,
     function(x) {
@@ -91,10 +93,12 @@ board <- gboard(page)
 #' FUNCTION: gwhole_post
 #' Anonymous (ID: 2o5j+xkQ)  05/21/21(Fri)20:29:50 No.3...(content)
 gwhole_post <- function(page) {
-  return (html_nodes(page, ".post") %>%
+  return(html_nodes(page, ".post") %>%
       html_text() %>%
       trimws())
 }
+
+data.frame(post_whole)
 
 post_whole <- gwhole_post(page)
 
@@ -105,10 +109,10 @@ gsticky <- function(page) {
   i <- 0
   for (s in html_nodes(page, "span.postNum.desktop")) {
     if (grepl("Sticky", s)) {
-      sticky_pointer <- c(sticky_pointer, 'YES')
+      sticky_pointer <- c(sticky_pointer, "YES")
       i <- i + 1
     } else {
-      sticky_pointer <- c(sticky_pointer, 'NA')
+      sticky_pointer <- c(sticky_pointer, "NA")
       i <- i + 1
     }
   }
@@ -177,7 +181,6 @@ img_names <- gimg_name(page)
 
 #' FUNCTION: gimg_size
 #' image size in KB: e.g., 40
-
 gimg_size <- function(page) {
   img_size <- c()
   for (s in html_nodes(page, ".fileText") %>% html_text()) {
@@ -210,7 +213,7 @@ c(img_width, img_height) %<-% gimg_dim(page)
 # == thread == {{{
 
 #' FUNCTION: gthread_post
-#' thread: e.g., key: 322626957 val: 322631216
+#' @return data.table; thread_id & all post_ids
 gthread_post <- function(page) {
   thread_post <- c()
   for (s in html_nodes(page, "span.postNum a") %>% html_attr("href")) {
@@ -218,14 +221,21 @@ gthread_post <- function(page) {
   }
 
   tmp_uniq <- unique(thread_post)
-  # posts
-  thread_post_h <- as.list(str_split(tmp_uniq, "/") %>% sapply(., "[[", 2))
-  # thread
-  names(thread_post_h) <- str_split(tmp_uniq, "/") %>% sapply(., "[[", 1)
-  return(thread_post_h)
+  thread_id <- matrix(unlist(str_split(tmp_uniq, "/") %>% sapply(., "[[", 1)))
+  post_id <- matrix(unlist(str_split(tmp_uniq, "/") %>% sapply(., "[[", 2)))
+
+  ddf <- data.frame(thread_id,post_id)
+
+  # stackoverflow.com/questions/33523320
+  dtt <- setDT(ddf)[, do.call(paste, c(.SD, list(collapse=', '))), thread_id]
+  dt1 <- cSplit(dtt, 'V1', sep='[ ,]+', fixed=FALSE, stripWhite=TRUE)
+  setnames(dt1, 2:ncol(dt1), rep(names(ddf)[-1], 7))
+  return(dt1)
 }
 
-thread_post <- gthread_post(page)
+thread_posts <- gthread_post(page)
+
+data.frame(thread_posts)
 # }}} == thread ==
 
 # == OG post == {{{
@@ -240,11 +250,14 @@ gpost_op <- function(page) {
 }
 
 c(op_post, op_postid) %<-% gpost_op(page)
+op_post_df <- data.frame(op_id=op_postid, op_post=op_post)
+
 # }}} == OG post ==
 
 # == replies == {{{
 
 #' FUNCTION: greply_gimg
+#' thread number
 #' num replies: 3 replies
 #' num reply images: 2 images
 greply_gimg <- function(page) {
@@ -258,29 +271,37 @@ greply_gimg <- function(page) {
   # n_thread_reply <- str_split(nrep_nimg, ",") %>% sapply(., "[[", 1)
   # n_img_reply <- str_split(nrep_nimg, ",") %>% sapply(., "[[", 2)
 
-   map(nrep_nimg, 1) %>%
-    rm_na(., "0 replies") %>%
-    { gsub("\\s?repl(ies|y)", "", .) } -> n_thread_reply
+  n_thread_reply <- map(nrep_nimg, 1) %>%
+      rm_na(., "0 replies") %>%
+      { gsub("\\s?repl(ies|y)", "", .) } %>%
+      trimws()
 
-  map(nrep_nimg, 2) %>%
-    rm_na(., "0") %>%
-    { gsub("\\s?image(s)?", "", .) } -> n_img_reply
+  n_img_reply <-  map(nrep_nimg, 2) %>%
+      rm_na(., "0") %>%
+      { gsub("\\s?image(s)?", "", .) } %>%
+      trimws( )
+
+  thread_n <- page %>%
+      html_nodes("span.summary a") %>%
+      html_attr("href") %>%
+      { gsub("thread/", "", .) } %>%
+      trimws()
 
   # n_img_reply <- rm_na(map(nrep_nimg, 2), "0 images")
   # n_thread_reply <- rm_na(map(nrep_nimg, 1), "0 replies")
 
-  return(list(n_thread_reply, n_img_reply))
+  # return(list(thread_n, n_thread_reply, n_img_reply))
+  return(
+    data.frame(thread_id = threadn, n_replies = nreply, n_img_replies = nimg_reply)
+  )
 }
 
-c(nreply, nimg_reply) %<-% greply_gimg(page)
+# c(threadn, nreply, nimg_reply) %<-% greply_gimg(page)
+n_replyimg_df <- greply_gimg(page)
 
-thread_n <- page %>%
-  html_nodes("span.summary a") %>%
-  html_attr("href") %>%
-  { gsub("thread/", "", .) }
-
-xx <- rm_na(n_img_reply, '0 images')
-
+# diff sizes
+n_replyimg_df$thread_id
+op_post_df$op_id
 # }}} == replies ==
 
 # }}} == single page ==
